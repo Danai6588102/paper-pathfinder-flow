@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +32,18 @@ const Index = () => {
   const [analysisSheetUrl, setAnalysisSheetUrl] = useState('');
   const [processingStage, setProcessingStage] = useState('');
   const [paperCount, setPaperCount] = useState(0);
+  const [runId, setRunId] = useState<string | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   const handleSubmitSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,59 +68,186 @@ const Index = () => {
 
     setIsLoading(true);
     setCurrentStep('processing');
-    
-    // Simulate realistic n8n workflow stages
     setProcessingStage('Initializing search parameters...');
+
+    try {
+      // Start Gumloop workflow
+      console.log(import.meta.env.VITE_GUMLOOP_GET_PAPERS_WEBHOOK_URL, import.meta.env.VITE_GUMLOOP_API_TOKEN);
+      const webhookResponse = await fetch(import.meta.env.VITE_GUMLOOP_GET_PAPERS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_GUMLOOP_API_TOKEN}` // Replace with your actual Gumloop API token
+        },
+        body: JSON.stringify({
+          keyword: topicKeyword.trim(),
+          years_back: parseInt(yearsBack),
+        })
+      });
+
+      if (!webhookResponse.ok) {
+        throw new Error('Failed to start workflow');
+      }
+
+      const webhookData = await webhookResponse.json();
+      const workflowRunId = webhookData.run_id;
+      
+      if (!workflowRunId) {
+        throw new Error('No run_id received from webhook');
+      }
+
+      setRunId(workflowRunId);
+      
+      // Start polling for progress
+      startProgressPolling(workflowRunId);
+
+    } catch (error) {
+      console.error('Error starting workflow:', error);
+      toast({
+        title: "Workflow Error",
+        description: "Failed to start the research workflow. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      setCurrentStep('input');
+      setProcessingStage('');
+    }
+  };
+
+  const startProgressPolling = (workflowRunId: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const progressResponse = await fetch(`https://api.gumloop.com/api/v1/runs/get_pl_run?run_id=${workflowRunId}`, {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_GUMLOOP_API_TOKEN}`, 
+          }
+        });
+
+        if (!progressResponse.ok) {
+          throw new Error('Failed to fetch progress');
+        }
+
+        const progressData = await progressResponse.json();
+        
+        // Update progress based on Gumloop response
+        updateProgressFromGumloop(progressData);
+
+        // Check if workflow is complete
+        if (progressData.status === 'completed') {
+          clearInterval(interval);
+          setPollingInterval(null);
+          handleWorkflowCompletion(progressData);
+        } else if (progressData.status === 'failed' || progressData.status === 'error') {
+          clearInterval(interval);
+          setPollingInterval(null);
+          handleWorkflowError(progressData);
+        }
+
+      } catch (error) {
+        console.error('Error polling progress:', error);
+        // Continue polling unless it's a critical error
+      }
+    }, 2000); // Poll every 2 seconds
+
+    setPollingInterval(interval);
+  };
+
+  const updateProgressFromGumloop = (progressData: any) => {
+    // Update processing stage based on Gumloop workflow progress
+    const { status, current_step, progress_percentage, output } = progressData;
     
-    setTimeout(() => {
-      setProcessingStage('Querying academic databases...');
-    }, 1000);
+    if (current_step) {
+      // Map Gumloop steps to user-friendly messages
+      const stepMessages: { [key: string]: string } = {
+        'database_search': 'Querying academic databases...',
+        'date_filtering': 'Filtering by publication date...',
+        'relevance_analysis': 'Analyzing paper relevance...',
+        'sheet_generation': 'Generating Google Sheet...',
+        'data_compilation': 'Compiling results...'
+      };
+      
+      const message = stepMessages[current_step] || `Processing: ${current_step}...`;
+      setProcessingStage(message);
+    }
+
+    // If we have partial results (like paper count), update immediately
+    if (output && output.paper_count) {
+      setPaperCount(output.paper_count);
+    }
+  };
+
+  const handleWorkflowCompletion = (completionData: any) => {
+    const { output } = completionData;
     
-    setTimeout(() => {
-      setProcessingStage('Filtering by publication date...');
-    }, 2000);
-    
-    setTimeout(() => {
-      setProcessingStage('Analyzing paper relevance...');
-    }, 3000);
-    
-    setTimeout(() => {
-      setProcessingStage('Generating Google Sheet...');
-      const mockCount = Math.floor(Math.random() * 50) + 25; // 25-75 papers
-      setPaperCount(mockCount);
-    }, 4000);
-    
-    setTimeout(() => {
-      setGoogleSheetUrl(`https://docs.google.com/spreadsheets/d/research-${Date.now()}`);
+    if (output && output.google_sheet_url && output.paper_count) {
+      setGoogleSheetUrl(output.google_sheet_url);
+      setPaperCount(output.paper_count);
       setCurrentStep('selection');
       setIsLoading(false);
       setProcessingStage('');
+      
       toast({
         title: "Research Papers Found!",
-        description: `Found ${paperCount} relevant papers. Review the Google Sheet to select your paper.`,
+        description: `Found ${output.paper_count} relevant papers. Review the Google Sheet to select your paper.`,
       });
-    }, 5000);
+    } else {
+      // Handle incomplete output
+      toast({
+        title: "Workflow Completed",
+        description: "Workflow finished but results may be incomplete. Please check the output.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      setCurrentStep('input');
+    }
   };
 
-  const handlePaperSelection = () => {
-    // Simulate paper selection from Google Sheet with more realistic data
-    const mockPaper: ResearchPaper = {
-      id: `paper_${Date.now()}`,
-      title: `${topicKeyword.charAt(0).toUpperCase() + topicKeyword.slice(1)} in Modern Research: Trends and Applications`,
-      authors: ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Dr. Elena Rodriguez', 'Prof. David Kim'],
-      year: 2024 - parseInt(yearsBack) + Math.floor(Math.random() * parseInt(yearsBack)),
-      abstract: `This comprehensive study examines the current state and future directions of ${topicKeyword} research. Through systematic analysis of recent publications and emerging methodologies, we identify key trends, challenges, and opportunities in the field. Our findings suggest significant potential for advancement in both theoretical understanding and practical applications. The research methodology employed combines quantitative analysis with qualitative assessment to provide a holistic view of the research landscape.`,
-      journal: 'International Journal of Advanced Research',
-      doi: '10.1000/xyz123',
-      citations: Math.floor(Math.random() * 500) + 50
-    };
+  const handleWorkflowError = (errorData: any) => {
+    console.error('Workflow failed:', errorData);
     
-    setSelectedPaper(mockPaper);
-    setCurrentStep('paper-view');
     toast({
-      title: "Paper Selected Successfully",
-      description: `"${mockPaper.title.substring(0, 50)}..." is now loaded for analysis`,
+      title: "Workflow Failed",
+      description: errorData.error_message || "The research workflow encountered an error. Please try again.",
+      variant: "destructive",
     });
+    
+    setIsLoading(false);
+    setCurrentStep('input');
+    setProcessingStage('');
+    setRunId(null);
+  };
+
+  const handlePaperSelection = async () => {
+    // You might want to call another Gumloop workflow or API to get the selected paper details
+    try {
+      // If you have a separate workflow for paper selection, call it here
+      // For now, keeping the mock data but you could fetch real data
+      
+      const mockPaper: ResearchPaper = {
+        id: `paper_${Date.now()}`,
+        title: `${topicKeyword.charAt(0).toUpperCase() + topicKeyword.slice(1)} in Modern Research: Trends and Applications`,
+        authors: ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Dr. Elena Rodriguez', 'Prof. David Kim'],
+        year: 2024 - parseInt(yearsBack) + Math.floor(Math.random() * parseInt(yearsBack)),
+        abstract: `This comprehensive study examines the current state and future directions of ${topicKeyword} research. Through systematic analysis of recent publications and emerging methodologies, we identify key trends, challenges, and opportunities in the field. Our findings suggest significant potential for advancement in both theoretical understanding and practical applications. The research methodology employed combines quantitative analysis with qualitative assessment to provide a holistic view of the research landscape.`,
+        journal: 'International Journal of Advanced Research',
+        doi: '10.1000/xyz123',
+        citations: Math.floor(Math.random() * 500) + 50
+      };
+      
+      setSelectedPaper(mockPaper);
+      setCurrentStep('paper-view');
+      toast({
+        title: "Paper Selected Successfully",
+        description: `"${mockPaper.title.substring(0, 50)}..." is now loaded for analysis`,
+      });
+    } catch (error) {
+      console.error('Error selecting paper:', error);
+      toast({
+        title: "Selection Error",
+        description: "Failed to load selected paper. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRunAnalysis = async () => {
@@ -118,24 +255,61 @@ const Index = () => {
     
     setIsLoading(true);
     
-    // Simulate n8n analysis workflow
     toast({
       title: "Starting Analysis",
       description: "Running data analysis workflow...",
     });
-    
-    setTimeout(() => {
-      setAnalysisSheetUrl(`https://docs.google.com/spreadsheets/d/analysis-${selectedPaper.id}`);
-      setCurrentStep('analysis');
-      setIsLoading(false);
-      toast({
-        title: "Analysis Complete!",
-        description: "Your research data analysis and visualizations are ready",
+
+    try {
+      // Call another Gumloop workflow for analysis
+      const analysisResponse = await fetch('YOUR_ANALYSIS_WEBHOOK_URL', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paper_id: selectedPaper.id,
+          paper_title: selectedPaper.title,
+          paper_doi: selectedPaper.doi,
+          analysis_type: 'comprehensive'
+        })
       });
-    }, 3500);
+
+      if (!analysisResponse.ok) {
+        throw new Error('Failed to start analysis workflow');
+      }
+
+      const analysisData = await analysisResponse.json();
+      
+      // You could poll for analysis progress here too
+      setTimeout(() => {
+        setAnalysisSheetUrl(`https://docs.google.com/spreadsheets/d/analysis-${selectedPaper.id}`);
+        setCurrentStep('analysis');
+        setIsLoading(false);
+        toast({
+          title: "Analysis Complete!",
+          description: "Your research data analysis and visualizations are ready",
+        });
+      }, 3500);
+
+    } catch (error) {
+      console.error('Error starting analysis:', error);
+      toast({
+        title: "Analysis Error",
+        description: "Failed to start analysis workflow. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   const resetWorkflow = () => {
+    // Clean up any active polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+    
     setCurrentStep('input');
     setTopicKeyword('');
     setYearsBack('');
@@ -144,6 +318,8 @@ const Index = () => {
     setAnalysisSheetUrl('');
     setPaperCount(0);
     setProcessingStage('');
+    setRunId(null);
+    
     toast({
       title: "Workflow Reset",
       description: "Ready for a new research query",
