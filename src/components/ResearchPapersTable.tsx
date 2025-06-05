@@ -1,0 +1,199 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ExternalLink, CheckCircle } from 'lucide-react';
+
+interface ResearchPaper {
+  id: string;
+  title: string;
+  authors: string[];
+  abstract: string;
+  paperLink?: string;
+  year: number;
+  journal: string;
+  citations?: number;
+}
+
+interface ResearchPapersTableProps {
+  papers: ResearchPaper[];
+  onPapersSelected: (papers: ResearchPaper[]) => void;
+  paperCount: number;
+  topicKeyword: string;
+  gumloopData?: any[][]; // Raw data from Gumloop
+}
+
+const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
+  papers,
+  onPapersSelected,
+  paperCount,
+  topicKeyword,
+  gumloopData
+}) => {
+  const [selectedPaperIds, setSelectedPaperIds] = useState<Set<string>>(new Set());
+
+  // Convert Gumloop data format to ResearchPaper format
+  const processedPapers = React.useMemo(() => {
+    if (gumloopData && gumloopData.length > 1) {
+      // Skip the header row (index 0) and process data rows
+      return gumloopData.slice(1).map((row, index) => ({
+        id: `gumloop_paper_${index}`,
+        title: row[1] || 'Untitled Paper',
+        authors: [row[2] || 'Unknown Author'], // Gumloop has single author field
+        abstract: row[3] || 'No abstract available',
+        paperLink: row[4] || undefined,
+        year: 2024, // Default year since not in Gumloop data
+        journal: 'Unknown Journal', // Default journal since not in Gumloop data
+        citations: undefined
+      }));
+    }
+    return papers;
+  }, [gumloopData, papers]);
+
+  const handleCheckboxChange = (paperId: string, checked: boolean) => {
+    const newSelectedIds = new Set(selectedPaperIds);
+    
+    if (checked) {
+      newSelectedIds.add(paperId);
+    } else {
+      newSelectedIds.delete(paperId);
+    }
+    
+    setSelectedPaperIds(newSelectedIds);
+  };
+
+  const handleContinue = () => {
+    if (selectedPaperIds.size > 0) {
+      const selectedPapers = processedPapers.filter(p => selectedPaperIds.has(p.id));
+      onPapersSelected(selectedPapers);
+    }
+  };
+
+  return (
+    <Card className="shadow-lg border-0">
+      <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg">
+        <CardTitle className="flex items-center gap-2">
+          <CheckCircle className="w-6 h-6" />
+          Select Your Research Papers
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="mb-6">
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
+            <p className="text-green-800 font-medium mb-1">
+              ✅ Found {processedPapers.length} relevant papers for "{topicKeyword}"
+            </p>
+            <p className="text-sm text-green-700">
+              Review the papers below and select one or more for detailed analysis.
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse border border-slate-300">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="border border-slate-300 px-4 py-3 text-left font-medium text-slate-700 w-12">No.</th>
+                <th className="border border-slate-300 px-4 py-3 text-left font-medium text-slate-700">Title</th>
+                <th className="border border-slate-300 px-4 py-3 text-left font-medium text-slate-700">Authors</th>
+                <th className="border border-slate-300 px-4 py-3 text-left font-medium text-slate-700">Abstract</th>
+                <th className="border border-slate-300 px-4 py-3 text-left font-medium text-slate-700 w-24">Paper Link</th>
+                <th className="border border-slate-300 px-4 py-3 text-center font-medium text-slate-700 w-20">Select</th>
+              </tr>
+            </thead>
+            <tbody>
+              {processedPapers.map((paper, index) => (
+                <tr key={paper.id} className={`hover:bg-slate-50 ${selectedPaperIds.has(paper.id) ? 'bg-blue-50' : ''}`}>
+                  <td className="border border-slate-300 px-4 py-3 text-sm text-slate-600">
+                    {index + 1}
+                  </td>
+                  <td className="border border-slate-300 px-4 py-3">
+                    <div className="space-y-1">
+                      <h4 className="font-medium text-slate-800 text-sm leading-tight">
+                        {paper.title}
+                      </h4>
+                      <div className="flex gap-2 text-xs text-slate-500">
+                        <span>{paper.journal}</span>
+                        <span>•</span>
+                        <span>{paper.year}</span>
+                        {paper.citations && (
+                          <>
+                            <span>•</span>
+                            <span>{paper.citations} citations</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="border border-slate-300 px-4 py-3">
+                    <div className="space-y-1">
+                      {paper.authors.slice(0, 3).map((author, authorIndex) => (
+                        <Badge key={authorIndex} variant="secondary" className="text-xs mr-1 mb-1">
+                          {author}
+                        </Badge>
+                      ))}
+                      {paper.authors.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{paper.authors.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="border border-slate-300 px-4 py-3">
+                    <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
+                      {paper.abstract.length > 150 
+                        ? `${paper.abstract.substring(0, 150)}...` 
+                        : paper.abstract
+                      }
+                    </p>
+                  </td>
+                  <td className="border border-slate-300 px-4 py-3 text-center">
+                    {paper.paperLink ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(paper.paperLink, '_blank')}
+                        className="p-2"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <span className="text-slate-400 text-xs">Not available</span>
+                    )}
+                  </td>
+                  <td className="border border-slate-300 px-4 py-3 text-center">
+                    <Checkbox
+                      checked={selectedPaperIds.has(paper.id)}
+                      onCheckedChange={(checked) => handleCheckboxChange(paper.id, checked as boolean)}
+                      className="mx-auto"
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-6 flex justify-between items-center">
+          <p className="text-sm text-slate-600">
+            {selectedPaperIds.size === 0 
+              ? 'Please select one or more papers to continue' 
+              : `${selectedPaperIds.size} paper${selectedPaperIds.size === 1 ? '' : 's'} selected`
+            }
+          </p>
+          <Button
+            onClick={handleContinue}
+            disabled={selectedPaperIds.size === 0}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            Continue with Selected Papers
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ResearchPapersTable;

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Search, FileText, ExternalLink, BarChart3, BookOpen, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import ResearchPapersTable from '@/components/ResearchPapersTable';
 
 type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'analysis-processing' | 'analysis';
 
@@ -775,60 +776,14 @@ const Index = () => {
           </Card>
         )}
 
-        {/* Step 3: Selection */}
+        {/* Step 3: Selection Table */}
         {currentStep === 'selection' && (
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg">
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="w-6 h-6" />
-                Paper Selection Available
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <p className="text-green-800 font-medium mb-2">
-                    ✅ Found {paperCount} relevant research papers!
-                  </p>
-                  <p className="text-sm text-green-700">
-                    Your search results have been compiled and are ready for review in Google Sheets.
-                  </p>
-                </div>
-                
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-800 mb-3">
-                    <strong>Next Steps:</strong>
-                  </p>
-                  <ol className="text-sm text-blue-700 list-decimal list-inside space-y-1 mb-4">
-                    <li>Click the link below to open the Google Sheet</li>
-                    <li>Review the list of papers and their metadata</li>
-                    <li>Select your preferred paper by marking it in the sheet</li>
-                    <li>Return here and click "I've Selected My Paper"</li>
-                  </ol>
-                  <Button 
-                    onClick={() => window.open(googleSheetUrl, '_blank')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open Research Papers Sheet
-                  </Button>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-3">
-                  <p className="text-slate-600">After selecting your paper in the Google Sheet:</p>
-                  <Button 
-                    onClick={handlePaperSelection}
-                    variant="outline"
-                    className="border-green-600 text-green-600 hover:bg-green-50"
-                  >
-                    I've Selected My Paper
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ResearchPapersTable
+            papers={researchPapers}
+            onPapersSelected={handlePaperSelection}
+            paperCount={paperCount}
+            topicKeyword={topicKeyword}
+          />
         )}
 
         {/* Step 4: Paper View */}
