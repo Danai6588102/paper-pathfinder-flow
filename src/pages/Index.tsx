@@ -8,19 +8,35 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Search, FileText, ExternalLink, BarChart3, BookOpen, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import ResearchPapersTable from '@/components/ResearchPapersTable';
+import { ResearchPaper } from '@/components/ResearchPapersTable';
 
 type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'analysis-processing' | 'analysis';
 
-interface ResearchPaper {
-  id: string;
-  title: string;
-  authors: string[];
-  year: number;
-  abstract: string;
-  journal: string;
-  doi?: string;
-  citations?: number;
-}
+// interface ResearchPaper {
+//   id: string;
+//   title: string;
+//   authors: string[];
+//   year: number;
+//   abstract: string;
+//   journal: string;
+//   doi?: string;
+//   citations?: number;
+// }
+
+const mockData = [
+
+['1', 'Green Cement Valuation: An Optimistic Approach to Carbon Dioxide Reduction.', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://sciendo.com/pdf/10.2478/jaes-2023-0033', 'False'],
+
+
+['2', 'Recent Developments in Reinforced Concrete Structures: A Comprehensive', '-', 'discusses eco-friendly building practises, eco-friendly design  Green building certifications:  Obtaining certifications for  are investigating how to make concrete that is carbon-neutral. 2.', 'https://ijaem.net/issue_dcp/Recent%20Developments%20in%20Reinforced%20Concrete%20Structures%20A%20Comprehensive%20Review.pdf', 'False'],
+
+
+['3', 'Industrial Cannabis sativa (hemp fiber): Hempcrete-A plant based and eco-friendly building construction material', '-', 'concrete used for building houses by using an eco-friendly  Green Jams, as they got down  to hand-make hemp concrete  With their carbon neutral and carbon negative properties, bio-', 'https://www.academia.edu/download/100805233/Hempcrete_D.pdf', 'False'],
+
+
+['4', 'Sustainable, Carbon-Neutral Construction Using Biobased Materials', '-', 'growing interest in sustainable, carbon-neutral building materials.  as hempcrete,  biochar-enhanced concrete, timber, clay, cork,  , concrete can store CO₂, making it a more', 'https://unisciencepub.com/wp-content/uploads/2025/04/Sustainable-Carbon-Neutral-Construction-Using-Biobased-Materials.pdf', 'False']
+]
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('input');
@@ -28,6 +44,7 @@ const Index = () => {
   const [yearsBack, setYearsBack] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  const [selectedPapers, setSelectedPapers] = useState<ResearchPaper[] | null>([]);
   const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null);
   const [analysisSheetUrl, setAnalysisSheetUrl] = useState('');
   const [processingStage, setProcessingStage] = useState('');
@@ -35,6 +52,8 @@ const Index = () => {
   const [runId, setRunId] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const [researchPapers, setResearchPapers] = useState<ResearchPaper[]>([]);
+  const [gumloopData, setGumloopData] = useState<any[][]>([]);
   const { toast } = useToast();
 
   // Clean up polling on unmount
@@ -241,29 +260,23 @@ const Index = () => {
       const sheetUrl = outputs.google_sheet_url || outputs.sheet_url || outputs.results_url || outputs.output_url;
       
       // Extract paper count (try different possible output keys)
-      const paperCount = outputs.paper_count || outputs.count || outputs.total_papers || outputs.results_count;
-      
-      if (sheetUrl && paperCount) {
-        setGoogleSheetUrl(sheetUrl);
-        setPaperCount(parseInt(paperCount));
+      const paper_count = outputs.paper_count || outputs.count || outputs.total_papers || outputs.results_count;
+
+      const table_content = outputs.table_content;
+
+      if (table_content && paper_count) {
+        // setResearchPapers(table_content);
+        console.log(`Table content: ${table_content}`);
+        console.log(`Paper count: ${paper_count}`);
+        setGumloopData(table_content);
+        setPaperCount(parseInt(paper_count));
         setCurrentStep('selection');
         setIsLoading(false);
         setProcessingStage('');
-        
+
         toast({
           title: "Research Papers Found!",
           description: `Found ${paperCount} relevant papers. Review the Google Sheet to select your paper.`,
-        });
-      } else if (sheetUrl) {
-        // We have a sheet URL but no paper count
-        setGoogleSheetUrl(sheetUrl);
-        setCurrentStep('selection');
-        setIsLoading(false);
-        setProcessingStage('');
-        
-        toast({
-          title: "Research Papers Ready!",
-          description: "Papers have been compiled. Review the Google Sheet to select your paper.",
         });
       } else {
         // Handle incomplete output
@@ -276,6 +289,7 @@ const Index = () => {
         setIsLoading(false);
         setCurrentStep('input');
       }
+      console.log(currentStep);
     } else {
       // No outputs available
       toast({
@@ -312,29 +326,41 @@ const Index = () => {
     setRunId(null);
   };
 
-  const handlePaperSelection = async () => {
+  const handlePaperSelection = async (selectedPapers: ResearchPaper[]) => {
     // You might want to call another Gumloop workflow or API to get the selected paper details
     try {
       // If you have a separate workflow for paper selection, call it here
       // For now, keeping the mock data but you could fetch real data
       
-      const mockPaper: ResearchPaper = {
-        id: `paper_${Date.now()}`,
-        title: `${topicKeyword.charAt(0).toUpperCase() + topicKeyword.slice(1)} in Modern Research: Trends and Applications`,
-        authors: ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Dr. Elena Rodriguez', 'Prof. David Kim'],
-        year: 2024 - parseInt(yearsBack) + Math.floor(Math.random() * parseInt(yearsBack)),
-        abstract: `This comprehensive study examines the current state and future directions of ${topicKeyword} research. Through systematic analysis of recent publications and emerging methodologies, we identify key trends, challenges, and opportunities in the field. Our findings suggest significant potential for advancement in both theoretical understanding and practical applications. The research methodology employed combines quantitative analysis with qualitative assessment to provide a holistic view of the research landscape.`,
-        journal: 'International Journal of Advanced Research',
-        doi: '10.1000/xyz123',
-        citations: Math.floor(Math.random() * 500) + 50
-      };
+      // const mockPaper: ResearchPaper = {
+      //   id: `paper_${Date.now()}`,
+      //   title: `${topicKeyword.charAt(0).toUpperCase() + topicKeyword.slice(1)} in Modern Research: Trends and Applications`,
+      //   authors: ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Dr. Elena Rodriguez', 'Prof. David Kim'],
+      //   year: 2024 - parseInt(yearsBack) + Math.floor(Math.random() * parseInt(yearsBack)),
+      //   abstract: `This comprehensive study examines the current state and future directions of ${topicKeyword} research. Through systematic analysis of recent publications and emerging methodologies, we identify key trends, challenges, and opportunities in the field. Our findings suggest significant potential for advancement in both theoretical understanding and practical applications. The research methodology employed combines quantitative analysis with qualitative assessment to provide a holistic view of the research landscape.`,
+      //   journal: 'International Journal of Advanced Research',
+      //   doi: '10.1000/xyz123',
+      //   citations: Math.floor(Math.random() * 500) + 50
+      // };
+      // const mockPaper = selectedPaper[0];
       
-      setSelectedPaper(mockPaper);
+      // setSelectedPaper(mockPaper);
+      // setCurrentStep('paper-view');
+      // toast({
+      //   title: "Paper Selected Successfully",
+      //   description: `"${mockPaper.title.substring(0, 50)}..." is now loaded for analysis`,
+      // });
+      setSelectedPapers(selectedPapers);
+      setSelectedPaper(selectedPapers[0]);
       setCurrentStep('paper-view');
+
+      const paperCount = selectedPapers.length;
+      const paperText = paperCount === 1 ? 'paper' : 'papers';
+
       toast({
-        title: "Paper Selected Successfully",
-        description: `"${mockPaper.title.substring(0, 50)}..." is now loaded for analysis`,
-      });
+        title: "Papers Selected Succesfully",
+        description: `${paperCount} ${paperText} seelcted for analysis`,
+      })
     } catch (error) {
       console.error('Error selecting paper:', error);
       toast({
@@ -346,12 +372,12 @@ const Index = () => {
   };
 
   const handleRunAnalysis = async () => {
-    if (!selectedPaper) return;
+    if (!selectedPapers || selectedPapers.length == 0) return;
     
     setIsLoading(true);
-    setCurrentStep('analysis-processing'); // Add processing step for analysis
+    setCurrentStep('analysis-processing');
     setProcessingStage('Initializing analysis workflow...');
-    setProgressPercentage(0); // Reset progress
+    setProgressPercentage(0);
     
     toast({
       title: "Starting Analysis",
@@ -359,6 +385,10 @@ const Index = () => {
     });
 
     try {
+      // Extract titles and links from selectedPapers
+      const titles = selectedPapers.map(paper => paper.title);
+      const links = selectedPapers.map(paper => paper.paperLink || ''); // Use DOI as link, or empty string if not available
+      
       // Call Gumloop workflow for analysis
       const analysisResponse = await fetch(import.meta.env.VITE_GUMLOOP_MAIN_FLOW_WEBHOOK_URL, {
         method: 'POST',
@@ -366,6 +396,10 @@ const Index = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_GUMLOOP_API_TOKEN}`, 
         },
+        body: JSON.stringify({
+          titles: titles,
+          links: links
+        })
       });
 
       if (!analysisResponse.ok) {
@@ -392,7 +426,7 @@ const Index = () => {
         variant: "destructive",
       });
       setIsLoading(false);
-      setCurrentStep('paper-view'); // Return to paper view on error
+      setCurrentStep('paper-view');
     }
   };
 
@@ -586,6 +620,7 @@ const Index = () => {
     setTopicKeyword('');
     setYearsBack('');
     setGoogleSheetUrl('');
+    setSelectedPapers(null);
     setSelectedPaper(null);
     setAnalysisSheetUrl('');
     setPaperCount(0);
@@ -597,6 +632,9 @@ const Index = () => {
       description: "Ready for a new research query",
     });
   };
+
+  // setGumloopData(mockData);
+  // setCurrentStep('selection');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
@@ -775,60 +813,15 @@ const Index = () => {
           </Card>
         )}
 
-        {/* Step 3: Selection */}
+        {/* Step 3: Selection Table */}
         {currentStep === 'selection' && (
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg">
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="w-6 h-6" />
-                Paper Selection Available
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <p className="text-green-800 font-medium mb-2">
-                    ✅ Found {paperCount} relevant research papers!
-                  </p>
-                  <p className="text-sm text-green-700">
-                    Your search results have been compiled and are ready for review in Google Sheets.
-                  </p>
-                </div>
-                
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-800 mb-3">
-                    <strong>Next Steps:</strong>
-                  </p>
-                  <ol className="text-sm text-blue-700 list-decimal list-inside space-y-1 mb-4">
-                    <li>Click the link below to open the Google Sheet</li>
-                    <li>Review the list of papers and their metadata</li>
-                    <li>Select your preferred paper by marking it in the sheet</li>
-                    <li>Return here and click "I've Selected My Paper"</li>
-                  </ol>
-                  <Button 
-                    onClick={() => window.open(googleSheetUrl, '_blank')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open Research Papers Sheet
-                  </Button>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-3">
-                  <p className="text-slate-600">After selecting your paper in the Google Sheet:</p>
-                  <Button 
-                    onClick={handlePaperSelection}
-                    variant="outline"
-                    className="border-green-600 text-green-600 hover:bg-green-50"
-                  >
-                    I've Selected My Paper
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ResearchPapersTable
+            papers={researchPapers}
+            onPapersSelected={handlePaperSelection}
+            paperCount={paperCount}
+            topicKeyword={topicKeyword}
+            gumloopData={gumloopData}
+          />
         )}
 
         {/* Step 4: Paper View */}
@@ -855,7 +848,7 @@ const Index = () => {
                     <div><strong>Year:</strong> {selectedPaper.year}</div>
                     <div><strong>Journal:</strong> {selectedPaper.journal}</div>
                     {selectedPaper.citations && <div><strong>Citations:</strong> {selectedPaper.citations}</div>}
-                    {selectedPaper.doi && <div><strong>DOI:</strong> {selectedPaper.doi}</div>}
+                    {selectedPaper.paperLink && <div><strong>DOI:</strong> {selectedPaper.paperLink}</div>}
                   </div>
                 </div>
                 
