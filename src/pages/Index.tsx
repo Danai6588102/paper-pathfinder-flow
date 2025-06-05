@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Search, FileText, ExternalLink, BarChart3, BookOpen, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Search, FileText, ExternalLink, BarChart3, BookOpen, AlertCircle, CheckCircle, Clock, Info} from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ResearchPapersTable from '@/components/ResearchPapersTable';
 import { ResearchPaper } from '@/components/ResearchPapersTable';
+
 
 type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'analysis-processing' | 'analysis';
 
@@ -642,10 +644,10 @@ const Index = () => {
         {/* Header */}
         <div className="text-center py-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <BookOpen className="w-8 h-8 text-blue-600" />
+           <img src="src/pages/logo.png" alt="Logo" className="h-20" />
             <h1 className="text-4xl font-bold text-slate-800">Research Paper Analytics</h1>
           </div>
-          <p className="text-slate-600 text-lg">Discover, analyze, and visualize academic research data with n8n workflows</p>
+          <p className="text-slate-600 text-lg">Discover, analyze, and visualize academic research data with automated workflows</p>
         </div>
 
         {/* Progress Indicator */}
@@ -684,28 +686,36 @@ const Index = () => {
         {currentStep === 'input' && (
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
-              <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
                 <Search className="w-6 h-6" />
                 Research Paper Search
-              </CardTitle>
+              </div>
+              <Popover>
+          <PopoverTrigger asChild>
+            <button className="text-white hover:text-blue-200">
+              <Info className="w-5 h-5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 text-sm bg-white text-slate-700 border border-blue-200 shadow-lg rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="font-semibold text-blue-800 mb-1">How it works:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Enter your research topic and time range</li>
+                  <li>Our automated workflow searches academic databases</li>
+                  <li>Results are compiled in a web page for review</li>
+                  <li>Select your preferred paper for detailed analysis</li>
+                  <li>Generate comprehensive data analysis and visualizations</li>
+                </ol>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+        </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium mb-1">How it works:</p>
-                    <ol className="list-decimal list-inside space-y-1">
-                      <li>Enter your research topic and time range</li>
-                      <li>Our n8n workflow searches academic databases</li>
-                      <li>Results are compiled in a Google Sheet for review</li>
-                      <li>Select your preferred paper for detailed analysis</li>
-                      <li>Generate comprehensive data analysis and visualizations</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-
               <form onSubmit={handleSubmitSearch} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
