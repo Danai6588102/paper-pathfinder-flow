@@ -13,22 +13,7 @@ import ResearchPapersTable from '@/components/ResearchPapersTable';
 import { ResearchPaper } from '@/components/ResearchPapersTable';
 
 
-
-
-type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'analysis-processing' | 'analysis';
-
-// interface ResearchPaper {
-//   id: string;
-//   title: string;
-//   authors: string[];
-//   year: number;
-//   abstract: string;
-//   journal: string;
-//   doi?: string;
-//   citations?: number;
-// }
-
-const mockData = [
+const mockData: any[][] = [
 
 ['1', 'Green Cement Valuation: An Optimistic Approach to Carbon Dioxide Reduction.', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://sciendo.com/pdf/10.2478/jaes-2023-0033', 'False'],
 
@@ -42,22 +27,24 @@ const mockData = [
 ['4', 'Sustainable, Carbon-Neutral Construction Using Biobased Materials', '-', 'growing interest in sustainable, carbon-neutral building materials.  as hempcrete,  biochar-enhanced concrete, timber, clay, cork,  , concrete can store CO₂, making it a more', 'https://unisciencepub.com/wp-content/uploads/2025/04/Sustainable-Carbon-Neutral-Construction-Using-Biobased-Materials.pdf', 'False']
 ]
 
+
+type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'extraction-processing' | 'extraction';
+
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('input');
   const [topicKeyword, setTopicKeyword] = useState('');
   const [yearsBack, setYearsBack] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
   const [selectedPapers, setSelectedPapers] = useState<ResearchPaper[] | null>([]);
   const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null);
-  const [analysisSheetUrl, setAnalysisSheetUrl] = useState('');
+  const [extractionSheetUrl, setExtractionSheetUrl] = useState('');
   const [processingStage, setProcessingStage] = useState('');
   const [paperCount, setPaperCount] = useState(0);
   const [runId, setRunId] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [researchPapers, setResearchPapers] = useState<ResearchPaper[]>([]);
-  const [gumloopData, setGumloopData] = useState<any[][]>([]);
+  const [gumloopData, setGumloopData] = useState<any[][]>(mockData);
   const { toast } = useToast();
 
   // Clean up polling on unmount
@@ -245,14 +232,6 @@ const Index = () => {
       if (outputs.paper_count) {
         setPaperCount(parseInt(outputs.paper_count));
       }
-      
-      // Check for any intermediate Google Sheet URL
-      if (outputs.google_sheet_url || outputs.sheet_url || outputs.results_url) {
-        const sheetUrl = outputs.google_sheet_url || outputs.sheet_url || outputs.results_url;
-        if (sheetUrl && !googleSheetUrl) {
-          setGoogleSheetUrl(sheetUrl);
-        }
-      }
     }
   };
 
@@ -260,16 +239,12 @@ const Index = () => {
     const { outputs } = completionData;
     
     if (outputs) {
-      // Extract the Google Sheet URL (try different possible output keys)
-      const sheetUrl = outputs.google_sheet_url || outputs.sheet_url || outputs.results_url || outputs.output_url;
-      
       // Extract paper count (try different possible output keys)
       const paper_count = outputs.paper_count || outputs.count || outputs.total_papers || outputs.results_count;
 
       const table_content = outputs.table_content;
 
       if (table_content && paper_count) {
-        // setResearchPapers(table_content);
         console.log(`Table content: ${table_content}`);
         console.log(`Paper count: ${paper_count}`);
         setGumloopData(table_content);
@@ -280,7 +255,7 @@ const Index = () => {
 
         toast({
           title: "Research Papers Found!",
-          description: `Found ${paperCount} relevant papers. Review the Google Sheet to select your paper.`,
+          description: `Found ${paper_count} relevant papers. Review the Google Sheet to select your paper.`,
         });
       } else {
         // Handle incomplete output
@@ -293,7 +268,6 @@ const Index = () => {
         setIsLoading(false);
         setCurrentStep('input');
       }
-      console.log(currentStep);
     } else {
       // No outputs available
       toast({
@@ -331,29 +305,7 @@ const Index = () => {
   };
 
   const handlePaperSelection = async (selectedPapers: ResearchPaper[]) => {
-    // You might want to call another Gumloop workflow or API to get the selected paper details
     try {
-      // If you have a separate workflow for paper selection, call it here
-      // For now, keeping the mock data but you could fetch real data
-      
-      // const mockPaper: ResearchPaper = {
-      //   id: `paper_${Date.now()}`,
-      //   title: `${topicKeyword.charAt(0).toUpperCase() + topicKeyword.slice(1)} in Modern Research: Trends and Applications`,
-      //   authors: ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Dr. Elena Rodriguez', 'Prof. David Kim'],
-      //   year: 2024 - parseInt(yearsBack) + Math.floor(Math.random() * parseInt(yearsBack)),
-      //   abstract: `This comprehensive study examines the current state and future directions of ${topicKeyword} research. Through systematic analysis of recent publications and emerging methodologies, we identify key trends, challenges, and opportunities in the field. Our findings suggest significant potential for advancement in both theoretical understanding and practical applications. The research methodology employed combines quantitative analysis with qualitative assessment to provide a holistic view of the research landscape.`,
-      //   journal: 'International Journal of Advanced Research',
-      //   doi: '10.1000/xyz123',
-      //   citations: Math.floor(Math.random() * 500) + 50
-      // };
-      // const mockPaper = selectedPaper[0];
-      
-      // setSelectedPaper(mockPaper);
-      // setCurrentStep('paper-view');
-      // toast({
-      //   title: "Paper Selected Successfully",
-      //   description: `"${mockPaper.title.substring(0, 50)}..." is now loaded for analysis`,
-      // });
       setSelectedPapers(selectedPapers);
       setSelectedPaper(selectedPapers[0]);
       setCurrentStep('paper-view');
@@ -375,26 +327,26 @@ const Index = () => {
     }
   };
 
-  const handleRunAnalysis = async () => {
+  const handleRunExtraction = async () => {
     if (!selectedPapers || selectedPapers.length == 0) return;
     
     setIsLoading(true);
-    setCurrentStep('analysis-processing');
-    setProcessingStage('Initializing analysis workflow...');
+    setCurrentStep('extraction-processing');
+    setProcessingStage('Initializing extraction workflow...');
     setProgressPercentage(0);
     
     toast({
-      title: "Starting Analysis",
+      title: "Starting Data Extraction",
       description: "Running data extraction workflow...",
     });
 
     try {
       // Extract titles and links from selectedPapers
       const titles = selectedPapers.map(paper => paper.title);
-      const links = selectedPapers.map(paper => paper.paperLink || ''); // Use DOI as link, or empty string if not available
+      const links = selectedPapers.map(paper => paper.paperLink || ''); 
       
       // Call Gumloop workflow for analysis
-      const analysisResponse = await fetch(import.meta.env.VITE_GUMLOOP_MAIN_FLOW_WEBHOOK_URL, {
+      const extractionResponse = await fetch(import.meta.env.VITE_GUMLOOP_MAIN_FLOW_WEBHOOK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -406,27 +358,27 @@ const Index = () => {
         })
       });
 
-      if (!analysisResponse.ok) {
-        throw new Error('Failed to start analysis workflow');
+      if (!extractionResponse.ok) {
+        throw new Error('Failed to start extraction workflow');
       }
 
-      const analysisData = await analysisResponse.json();
-      const analysisRunId = analysisData.run_id;
+      const extractionData = await extractionResponse.json();
+      const extractionRunId = extractionData.run_id;
       
-      if (!analysisRunId) {
-        throw new Error('No run_id received from analysis webhook');
+      if (!extractionRunId) {
+        throw new Error('No run_id received from extraction webhook');
       }
 
-      setRunId(analysisRunId);
+      setRunId(extractionRunId);
       
       // Start polling for analysis progress
-      startAnalysisProgressPolling(analysisRunId);
+      startExtractionProgressPolling(extractionRunId);
 
     } catch (error) {
-      console.error('Error starting analysis:', error);
+      console.error('Error starting extraction:', error);
       toast({
-        title: "Analysis Error",
-        description: "Failed to start analysis workflow. Please try again.",
+        title: "Extraction Error",
+        description: "Failed to start extraction workflow. Please try again.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -434,7 +386,7 @@ const Index = () => {
     }
   };
 
-  const startAnalysisProgressPolling = (workflowRunId: string) => {
+  const startExtractionProgressPolling = (workflowRunId: string) => {
     const interval = setInterval(async () => {
       try {
         const progressResponse = await fetch(`https://api.gumloop.com/api/v1/get_pl_run?run_id=${workflowRunId}&user_id=${import.meta.env.VITE_GUMLOOP_USER_ID}`, {
@@ -444,27 +396,27 @@ const Index = () => {
         });
 
         if (!progressResponse.ok) {
-          throw new Error('Failed to fetch analysis progress');
+          throw new Error('Failed to fetch extraction progress');
         }
 
         const progressData = await progressResponse.json();
         
         // Update progress based on Gumloop response
-        updateAnalysisProgressFromGumloop(progressData);
+        updateExtractionProgressFromGumloop(progressData);
 
         // Check if workflow is complete
         if (progressData.state === 'DONE') {
           clearInterval(interval);
           setPollingInterval(null);
-          handleAnalysisCompletion(progressData);
+          handleExtractionCompletion(progressData);
         } else if (progressData.state === 'FAILED' || progressData.state === 'TERMINATED') {
           clearInterval(interval);
           setPollingInterval(null);
-          handleAnalysisError(progressData);
+          handleExtractionError(progressData);
         }
 
       } catch (error) {
-        console.error('Error polling analysis progress:', error);
+        console.error('Error polling extraction progress:', error);
         // Continue polling unless it's a critical error
       }
     }, 60000); // Poll every 2 seconds
@@ -472,7 +424,7 @@ const Index = () => {
     setPollingInterval(interval);
   };
 
-  const updateAnalysisProgressFromGumloop = (progressData: any) => {
+  const updateExtractionProgressFromGumloop = (progressData: any) => {
     const { state, log, outputs, created_ts } = progressData;
     
     // Calculate progress percentage based on time elapsed since workflow creation
@@ -480,7 +432,7 @@ const Index = () => {
     
     if (state === 'STARTED') {
       progress = 10;
-      setProcessingStage('Analysis workflow starting...');
+      setProcessingStage('Extraction workflow starting...');
     } else if (state === 'RUNNING') {
       // Calculate time-based progress
       if (created_ts) {
@@ -492,7 +444,7 @@ const Index = () => {
         const timeProgress = Math.min((elapsedSeconds / 480) * 90, 90);
         progress = Math.max(10, timeProgress);
         
-        console.log(`Analysis elapsed time: ${elapsedSeconds.toFixed(1)}s, Progress: ${progress.toFixed(1)}%`);
+        console.log(`Extraction elapsed time: ${elapsedSeconds.toFixed(1)}s, Progress: ${progress.toFixed(1)}%`);
       } else {
         progress = 20;
       }
@@ -501,24 +453,21 @@ const Index = () => {
       if (log && log.length > 0) {
         const latestLogEntry = log[log.length - 1];
         
-        // Map analysis-specific node activities to user-friendly messages
-        const analysisActivityMessages: { [key: string]: string } = {
+        // Map extraction-specific node activities to user-friendly messages
+        const extractionActivityMessages: { [key: string]: string } = {
           'extract': 'Extracting data from research paper...',
-          'citation': 'Analyzing citation networks...',
           'trend': 'Identifying research trends...',
           'methodology': 'Processing methodology data...',
           'visualization': 'Generating charts and graphs...',
-          'comparison': 'Comparing with related papers...',
-          'metrics': 'Calculating impact metrics...',
           'compile': 'Compiling analysis results...',
           'export': 'Preparing final analysis...',
           'sheet': 'Generating analysis spreadsheet...'
         };
         
-        let currentActivity = 'Processing analysis...';
+        let currentActivity = 'Processing extraction...';
         if (latestLogEntry.node_name) {
           const nodeName = latestLogEntry.node_name.toLowerCase();
-          for (const [key, message] of Object.entries(analysisActivityMessages)) {
+          for (const [key, message] of Object.entries(extractionActivityMessages)) {
             if (nodeName.includes(key)) {
               currentActivity = message;
               break;
@@ -528,11 +477,11 @@ const Index = () => {
         
         setProcessingStage(currentActivity);
       } else {
-        setProcessingStage('Running data analysis...');
+        setProcessingStage('Running data extraction...');
       }
     } else if (state === 'DONE') {
       progress = 100;
-      setProcessingStage('Analysis complete!');
+      setProcessingStage('Extraction complete!');
     }
     
     setProgressPercentage(progress);
@@ -542,14 +491,14 @@ const Index = () => {
       // Handle any intermediate analysis outputs here
       if (outputs.analysis_sheet_url || outputs.results_url) {
         const sheetUrl = outputs.analysis_sheet_url || outputs.results_url;
-        if (sheetUrl && !analysisSheetUrl) {
-          setAnalysisSheetUrl(sheetUrl);
+        if (sheetUrl && !extractionSheetUrl) {
+          setExtractionSheetUrl(sheetUrl);
         }
       }
     }
   };
 
-  const handleAnalysisCompletion = (completionData: any) => {
+  const handleExtractionCompletion = (completionData: any) => {
     const { outputs } = completionData;
     
     if (outputs) {
@@ -557,21 +506,21 @@ const Index = () => {
       const sheetUrl = outputs.analysis_sheet_url || outputs.results_url || outputs.output_url || outputs.sheet_url;
       
       if (sheetUrl) {
-        setAnalysisSheetUrl(sheetUrl);
-        setCurrentStep('analysis');
+        setExtractionSheetUrl(sheetUrl);
+        setCurrentStep('extraction');
         setIsLoading(false);
         setProcessingStage('');
         
         toast({
-          title: "Analysis Complete!",
-          description: "Your research data analysis and visualizations are ready",
+          title: "Extraction Complete!",
+          description: "Your extracted research data is ready",
         });
       } else {
         // Handle incomplete output
-        console.log('Available analysis outputs:', outputs);
+        console.log('Available extraction outputs:', outputs);
         toast({
-          title: "Analysis Completed",
-          description: "Analysis finished. Please check the outputs for results.",
+          title: "Extraction Completed",
+          description: "Extraction finished. Please check the outputs for results.",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -580,8 +529,8 @@ const Index = () => {
     } else {
       // No outputs available
       toast({
-        title: "Analysis Completed",
-        description: "Analysis finished but no outputs were generated. Please try again.",
+        title: "Extraction Completed",
+        description: "Extraction finished but no outputs were generated. Please try again.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -589,11 +538,11 @@ const Index = () => {
     }
   };
 
-  const handleAnalysisError = (errorData: any) => {
-    console.error('Analysis workflow failed:', errorData);
+  const handleExtractionError = (errorData: any) => {
+    console.error('Extraction workflow failed:', errorData);
     
     // Try to extract error message from logs
-    let errorMessage = "The analysis workflow encountered an error. Please try again.";
+    let errorMessage = "The extraction workflow encountered an error. Please try again.";
     if (errorData.log && errorData.log.length > 0) {
       const errorLog = errorData.log.find((entry: any) => entry.error || entry.status === 'failed');
       if (errorLog && errorLog.error) {
@@ -602,7 +551,7 @@ const Index = () => {
     }
     
     toast({
-      title: "Analysis Failed",
+      title: "Extraction Failed",
       description: errorMessage,
       variant: "destructive",
     });
@@ -623,10 +572,9 @@ const Index = () => {
     setCurrentStep('input');
     setTopicKeyword('');
     setYearsBack('');
-    setGoogleSheetUrl('');
     setSelectedPapers(null);
     setSelectedPaper(null);
-    setAnalysisSheetUrl('');
+    setExtractionSheetUrl('');
     setPaperCount(0);
     setProcessingStage('');
     setRunId(null);
@@ -637,9 +585,6 @@ const Index = () => {
     });
   };
 
-  // setGumloopData(mockData);
-  // setCurrentStep('selection');
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -647,9 +592,9 @@ const Index = () => {
         <div className="text-center py-8">
           <div className="flex items-center justify-center gap-3 mb-4">
            <img src="/logo.png" alt="Logo" className="h-20" />
-            <h1 className="text-4xl font-bold text-slate-800">Research Paper Analytics</h1>
+            <h1 className="text-4xl font-bold text-slate-800">Research Paper Data Extraction</h1>
           </div>
-          <p className="text-slate-600 text-lg">Discover, analyze, and visualize academic research data with automated workflows</p>
+          <p className="text-slate-600 text-lg">Extract academic research data with automated workflows</p>
         </div>
 
         {/* Progress Indicator */}
@@ -659,17 +604,17 @@ const Index = () => {
             { step: 'processing', label: 'Processing', icon: FileText },
             { step: 'selection', label: 'Selection', icon: ExternalLink },
             { step: 'paper-view', label: 'Review', icon: BookOpen },
-            { step: 'analysis-processing', label: 'Analyzing', icon: Clock },
-            { step: 'analysis', label: 'Analysis', icon: BarChart3 }
+            { step: 'extraction-processing', label: 'Extraction', icon: Clock },
+            { step: 'extraction', label: 'Extracted Data', icon: BarChart3 }
           ].map(({ step, label, icon: Icon }, index) => (
             <React.Fragment key={step}>
               <div className={`flex flex-col items-center ${
                 currentStep === step ? 'text-blue-600' : 
-                ['input', 'processing', 'selection', 'paper-view', 'analysis'].indexOf(currentStep) > index ? 'text-green-600' : 'text-slate-400'
+                ['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'text-green-600' : 'text-slate-400'
               }`}>
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
                   currentStep === step ? 'border-blue-600 bg-blue-100' :
-                  ['input', 'processing', 'selection', 'paper-view', 'analysis'].indexOf(currentStep) > index ? 'border-green-600 bg-green-100' : 'border-slate-300'
+                  ['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'border-green-600 bg-green-100' : 'border-slate-300'
                 }`}>
                   <Icon className="w-5 h-5" />
                 </div>
@@ -677,7 +622,7 @@ const Index = () => {
               </div>
               {index < 5 && (
                 <div className={`w-16 h-0.5 ${
-                  ['input', 'processing', 'selection', 'paper-view', 'analysis'].indexOf(currentStep) > index ? 'bg-green-600' : 'bg-slate-300'
+                  ['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'bg-green-600' : 'bg-slate-300'
                 }`} />
               )}
             </React.Fragment>
@@ -708,8 +653,8 @@ const Index = () => {
                   <li>Enter your research topic and time range</li>
                   <li>Our automated workflow searches academic databases</li>
                   <li>Results are compiled in a web page for review</li>
-                  <li>Select your preferred paper for detailed analysis</li>
-                  <li>Generate comprehensive data analysis and visualizations</li>
+                  <li>Select your preferred paper for data extraction</li>
+                  <li>Generate table of extracted data</li>
                 </ol>
               </div>
             </div>
@@ -814,9 +759,9 @@ const Index = () => {
                   </>
                 ) : (
                   <>
-                    <p>🔍 Scanning academic databases (PubMed, IEEE, ACM, etc.)</p>
+                    <p>🔍 Scanning academic databases (Google Scholar, IEEE, PubMed, etc.)</p>
                     <p>📊 Applying filters and relevance scoring</p>
-                    <p>📝 Compiling results in Google Sheets</p>
+                    <p>📝 Compiling results</p>
                     <p>⚡ Powered by Gumloop automation</p>
                   </>
                 )}
@@ -860,7 +805,7 @@ const Index = () => {
                     <div><strong>Year:</strong> {selectedPaper.year}</div>
                     <div><strong>Journal:</strong> {selectedPaper.journal}</div>
                     {selectedPaper.citations && <div><strong>Citations:</strong> {selectedPaper.citations}</div>}
-                    {selectedPaper.paperLink && <div><strong>DOI:</strong> {selectedPaper.paperLink}</div>}
+                    {selectedPaper.paperLink && <div><strong>Link:</strong> {selectedPaper.paperLink}</div>}
                   </div>
                 </div>
                 
@@ -874,20 +819,18 @@ const Index = () => {
                 <Separator />
                 
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <h4 className="font-semibold text-purple-800 mb-2">Analysis Will Include:</h4>
+                  <h4 className="font-semibold text-purple-800 mb-2">Extraction Will Include:</h4>
                   <ul className="text-sm text-purple-700 space-y-1">
-                    <li>• Citation network analysis and trends</li>
-                    <li>• Research methodology breakdown</li>
-                    <li>• Key findings visualization</li>
-                    <li>• Comparative analysis with related papers</li>
-                    <li>• Impact metrics and trend analysis</li>
+                    <li>• Data written in text within paragraphs</li>
+                    <li>• Data in tables</li>
+                    <li>• Data in charts and graphs</li>
                   </ul>
                 </div>
                 
                 <div className="text-center space-y-4">
-                  <p className="text-slate-600">Ready to generate comprehensive analysis data?</p>
+                  <p className="text-slate-600">Ready to extract data?</p>
                   <Button 
-                    onClick={handleRunAnalysis}
+                    onClick={handleRunExtraction}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3"
                     disabled={isLoading}
                   >
@@ -900,13 +843,13 @@ const Index = () => {
         )}
 
         {/* Step 5: Analysis Processing */}
-        {currentStep === 'analysis-processing' && selectedPaper && (
+        {currentStep === 'extraction-processing' && selectedPaper && (
         <Card className="shadow-lg border-0">
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
-            <h3 className="text-2xl font-semibold text-slate-800 mb-2">Analyzing Your Research Paper</h3>
+            <h3 className="text-2xl font-semibold text-slate-800 mb-2">Extracting Data From Your Research Paper</h3>
             <p className="text-slate-600 mb-6">
-              Extracting comprehensive data and generating analysis for "<strong>{selectedPaper.title.substring(0, 60)}...</strong>"
+              Extracting data from "<strong>{selectedPaper.title.substring(0, 60)}...</strong>"
             </p>
       
             {/* Progress Bar */}
@@ -929,7 +872,7 @@ const Index = () => {
       
             {/* Paper Info Card */}
             <div className="bg-slate-50 p-4 rounded-lg border mb-4 text-left">
-              <h4 className="font-semibold text-slate-800 mb-2">Processing Paper:</h4>
+              <h4 className="font-semibold text-slate-800 mb-2">Extracting from Paper:</h4>
               <div className="text-sm text-slate-600 space-y-1">
                 <p><strong>Authors:</strong> {selectedPaper.authors.slice(0, 3).join(', ')}{selectedPaper.authors.length > 3 ? ' et al.' : ''}</p>
                 <p><strong>Journal:</strong> {selectedPaper.journal} ({selectedPaper.year})</p>
@@ -938,56 +881,51 @@ const Index = () => {
             </div>
       
             <div className="space-y-2 text-sm text-slate-500">
-              <p>📊 Extracting research data and methodology</p>
-              <p>📈 Analyzing citation networks and impact metrics</p>
-              <p>🔍 Processing key findings and conclusions</p>
-              <p>📋 Generating comprehensive visualizations</p>
-              <p>🔗 Mapping relationships with related papers</p>
+              <p>📊 Extracting data from charts</p>
+              <p>📈 Extracting data from graphs</p>
+              <p>📋 Extracting data from text</p>
               <p>⚡ Powered by Gumloop automation</p>
             </div>
       
             <div className="mt-6 text-xs text-slate-400">
-              <p>This process typically takes 1-2 minutes depending on paper complexity</p>
+              <p>This process typically takes 10-20 minutes depending on paper complexity</p>
             </div>
           </CardContent>
         </Card>
         )}
 
         {/* Step 6: Analysis Results */}
-        {currentStep === 'analysis' && (
+        {currentStep === 'extraction' && (
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-6 h-6" />
-                Analysis Complete
+                Extraction Complete
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-center space-y-6">
                 <div className="bg-green-50 p-6 rounded-lg border border-green-200">
                   <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                  <h3 className="text-xl font-semibold text-green-800 mb-2">Analysis Successfully Generated!</h3>
-                  <p className="text-green-700 mb-4">Your comprehensive research data analysis and visualizations are ready for review.</p>
+                  <h3 className="text-xl font-semibold text-green-800 mb-2">Extraction Successfully Generated!</h3>
+                  <p className="text-green-700 mb-4">Your extracted research data is ready for review.</p>
                   
                   <Button 
-                    onClick={() => window.open(analysisSheetUrl, '_blank')}
+                    onClick={() => window.open(extractionSheetUrl, '_blank')}
                     className="bg-green-600 hover:bg-green-700 text-white mb-4"
                   >
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    View Analysis & Visualizations
+                    View Extracted Data
                   </Button>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4 text-left">
                   <div className="bg-slate-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-slate-800 mb-2">Analysis Includes:</h4>
+                    <h4 className="font-semibold text-slate-800 mb-2">Extracted Data Includes:</h4>
                     <ul className="text-sm text-slate-600 space-y-1">
-                      <li>• Citation network graphs</li>
-                      <li>• Research trend analysis</li>
-                      <li>• Methodology comparison charts</li>
-                      <li>• Impact metrics visualization</li>
-                      <li>• Related papers mapping</li>
-                      <li>• Statistical data tables</li>
+                      <li>• Data from text in paragraphs</li>
+                      <li>• Data from tables</li>
+                      <li>• Data from graphs and charts</li>
                     </ul>
                   </div>
                   
@@ -1012,7 +950,7 @@ const Index = () => {
                     Start New Research Query
                   </Button>
                   <Button 
-                    onClick={() => window.open(analysisSheetUrl, '_blank')}
+                    onClick={() => window.open(extractionSheetUrl, '_blank')}
                     variant="outline"
                     className="border-green-600 text-green-600 hover:bg-green-50"
                   >
