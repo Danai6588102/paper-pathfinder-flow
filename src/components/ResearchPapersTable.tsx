@@ -68,6 +68,7 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
     if (selectedPaperIds.size > 0) {
       const selectedPapers = processedPapers.filter(p => selectedPaperIds.has(p.id));
       onPapersSelected(selectedPapers);
+      console.log('Selected papers:', selectedPapers);
     }
   };
 

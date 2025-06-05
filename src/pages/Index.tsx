@@ -23,6 +23,20 @@ interface ResearchPaper {
   citations?: number;
 }
 
+const mockData = [
+
+['1', 'Green Cement Valuation: An Optimistic Approach to Carbon Dioxide Reduction.', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://sciendo.com/pdf/10.2478/jaes-2023-0033', 'False'],
+
+
+['2', 'Recent Developments in Reinforced Concrete Structures: A Comprehensive', '-', 'discusses eco-friendly building practises, eco-friendly design  Green building certifications:  Obtaining certifications for  are investigating how to make concrete that is carbon-neutral. 2.', 'https://ijaem.net/issue_dcp/Recent%20Developments%20in%20Reinforced%20Concrete%20Structures%20A%20Comprehensive%20Review.pdf', 'False'],
+
+
+['3', 'Industrial Cannabis sativa (hemp fiber): Hempcrete-A plant based and eco-friendly building construction material', '-', 'concrete used for building houses by using an eco-friendly  Green Jams, as they got down  to hand-make hemp concrete  With their carbon neutral and carbon negative properties, bio-', 'https://www.academia.edu/download/100805233/Hempcrete_D.pdf', 'False'],
+
+
+['4', 'Sustainable, Carbon-Neutral Construction Using Biobased Materials', '-', 'growing interest in sustainable, carbon-neutral building materials.  as hempcrete,  biochar-enhanced concrete, timber, clay, cork,  , concrete can store CO₂, making it a more', 'https://unisciencepub.com/wp-content/uploads/2025/04/Sustainable-Carbon-Neutral-Construction-Using-Biobased-Materials.pdf', 'False']
+]
+
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('input');
   const [topicKeyword, setTopicKeyword] = useState('');
@@ -36,6 +50,8 @@ const Index = () => {
   const [runId, setRunId] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const [researchPapers, setResearchPapers] = useState<ResearchPaper[]>([]);
+  const [gumloopData, setGumloopData] = useState<any[][]>([]);
   const { toast } = useToast();
 
   // Clean up polling on unmount
@@ -243,28 +259,20 @@ const Index = () => {
       
       // Extract paper count (try different possible output keys)
       const paperCount = outputs.paper_count || outputs.count || outputs.total_papers || outputs.results_count;
-      
-      if (sheetUrl && paperCount) {
-        setGoogleSheetUrl(sheetUrl);
+
+      const table_content = outputs.table_content;
+
+      if (table_content && paperCount) {
+        setResearchPapers(table_content);
+        setGumloopData(table_content);
         setPaperCount(parseInt(paperCount));
         setCurrentStep('selection');
         setIsLoading(false);
         setProcessingStage('');
-        
+
         toast({
           title: "Research Papers Found!",
           description: `Found ${paperCount} relevant papers. Review the Google Sheet to select your paper.`,
-        });
-      } else if (sheetUrl) {
-        // We have a sheet URL but no paper count
-        setGoogleSheetUrl(sheetUrl);
-        setCurrentStep('selection');
-        setIsLoading(false);
-        setProcessingStage('');
-        
-        toast({
-          title: "Research Papers Ready!",
-          description: "Papers have been compiled. Review the Google Sheet to select your paper.",
         });
       } else {
         // Handle incomplete output
@@ -277,6 +285,7 @@ const Index = () => {
         setIsLoading(false);
         setCurrentStep('input');
       }
+      console.log(currentStep);
     } else {
       // No outputs available
       toast({
@@ -313,22 +322,23 @@ const Index = () => {
     setRunId(null);
   };
 
-  const handlePaperSelection = async () => {
+  const handlePaperSelection = async (selectedPapers: ResearchPaper[]) => {
     // You might want to call another Gumloop workflow or API to get the selected paper details
     try {
       // If you have a separate workflow for paper selection, call it here
       // For now, keeping the mock data but you could fetch real data
       
-      const mockPaper: ResearchPaper = {
-        id: `paper_${Date.now()}`,
-        title: `${topicKeyword.charAt(0).toUpperCase() + topicKeyword.slice(1)} in Modern Research: Trends and Applications`,
-        authors: ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Dr. Elena Rodriguez', 'Prof. David Kim'],
-        year: 2024 - parseInt(yearsBack) + Math.floor(Math.random() * parseInt(yearsBack)),
-        abstract: `This comprehensive study examines the current state and future directions of ${topicKeyword} research. Through systematic analysis of recent publications and emerging methodologies, we identify key trends, challenges, and opportunities in the field. Our findings suggest significant potential for advancement in both theoretical understanding and practical applications. The research methodology employed combines quantitative analysis with qualitative assessment to provide a holistic view of the research landscape.`,
-        journal: 'International Journal of Advanced Research',
-        doi: '10.1000/xyz123',
-        citations: Math.floor(Math.random() * 500) + 50
-      };
+      // const mockPaper: ResearchPaper = {
+      //   id: `paper_${Date.now()}`,
+      //   title: `${topicKeyword.charAt(0).toUpperCase() + topicKeyword.slice(1)} in Modern Research: Trends and Applications`,
+      //   authors: ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Dr. Elena Rodriguez', 'Prof. David Kim'],
+      //   year: 2024 - parseInt(yearsBack) + Math.floor(Math.random() * parseInt(yearsBack)),
+      //   abstract: `This comprehensive study examines the current state and future directions of ${topicKeyword} research. Through systematic analysis of recent publications and emerging methodologies, we identify key trends, challenges, and opportunities in the field. Our findings suggest significant potential for advancement in both theoretical understanding and practical applications. The research methodology employed combines quantitative analysis with qualitative assessment to provide a holistic view of the research landscape.`,
+      //   journal: 'International Journal of Advanced Research',
+      //   doi: '10.1000/xyz123',
+      //   citations: Math.floor(Math.random() * 500) + 50
+      // };
+      const mockPaper = selectedPaper[0];
       
       setSelectedPaper(mockPaper);
       setCurrentStep('paper-view');
@@ -599,6 +609,9 @@ const Index = () => {
     });
   };
 
+  // setGumloopData(mockData);
+  // setCurrentStep('selection');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -783,6 +796,7 @@ const Index = () => {
             onPapersSelected={handlePaperSelection}
             paperCount={paperCount}
             topicKeyword={topicKeyword}
+            gumloopData={gumloopData}
           />
         )}
 
