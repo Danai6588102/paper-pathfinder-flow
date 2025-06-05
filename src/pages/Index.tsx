@@ -13,6 +13,8 @@ import ResearchPapersTable from '@/components/ResearchPapersTable';
 import { ResearchPaper } from '@/components/ResearchPapersTable';
 
 
+
+
 type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'analysis-processing' | 'analysis';
 
 // interface ResearchPaper {
@@ -644,7 +646,7 @@ const Index = () => {
         {/* Header */}
         <div className="text-center py-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-           <img src="src/pages/logo.png" alt="Logo" className="h-20" />
+           <img src="/logo.png" alt="Logo" className="h-20" />
             <h1 className="text-4xl font-bold text-slate-800">Research Paper Analytics</h1>
           </div>
           <p className="text-slate-600 text-lg">Discover, analyze, and visualize academic research data with automated workflows</p>
