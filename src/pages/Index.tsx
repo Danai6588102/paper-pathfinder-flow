@@ -429,7 +429,7 @@ const Index = () => {
         console.error('Error polling analysis progress:', error);
         // Continue polling unless it's a critical error
       }
-    }, 2000); // Poll every 2 seconds
+    }, 60000); // Poll every 2 seconds
 
     setPollingInterval(interval);
   };
@@ -451,7 +451,7 @@ const Index = () => {
         const elapsedSeconds = (currentTime - startTime) / 1000;
         
         // Progress over 45 seconds for analysis (longer than search), capped at 90%
-        const timeProgress = Math.min((elapsedSeconds / 45) * 90, 90);
+        const timeProgress = Math.min((elapsedSeconds / 480) * 90, 90);
         progress = Math.max(10, timeProgress);
         
         console.log(`Analysis elapsed time: ${elapsedSeconds.toFixed(1)}s, Progress: ${progress.toFixed(1)}%`);
@@ -894,7 +894,7 @@ const Index = () => {
           </Card>
         )}
 
-        {/* Step 6: Analysis Processing */}
+        {/* Step 5: Analysis Processing */}
         {currentStep === 'analysis-processing' && selectedPaper && (
         <Card className="shadow-lg border-0">
           <CardContent className="p-8 text-center">
@@ -946,9 +946,9 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
-      )}
+        )}
 
-        {/* Step 5: Analysis Results */}
+        {/* Step 6: Analysis Results */}
         {currentStep === 'analysis' && (
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-t-lg">
