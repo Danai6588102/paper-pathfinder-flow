@@ -89,7 +89,7 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
               ✅ Found {processedPapers.length} relevant papers for "{topicKeyword}"
             </p>
             <p className="text-sm text-green-700">
-              Review the papers below and select one or more for detailed analysis.
+              Review the papers below and select one or more for detailed extraction.
             </p>
           </div>
         </div>
