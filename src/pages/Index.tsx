@@ -9,19 +9,20 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Search, FileText, ExternalLink, BarChart3, BookOpen, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import ResearchPapersTable from '@/components/ResearchPapersTable';
+import { ResearchPaper } from '@/components/ResearchPapersTable';
 
 type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'analysis-processing' | 'analysis';
 
-interface ResearchPaper {
-  id: string;
-  title: string;
-  authors: string[];
-  year: number;
-  abstract: string;
-  journal: string;
-  doi?: string;
-  citations?: number;
-}
+// interface ResearchPaper {
+//   id: string;
+//   title: string;
+//   authors: string[];
+//   year: number;
+//   abstract: string;
+//   journal: string;
+//   doi?: string;
+//   citations?: number;
+// }
 
 const mockData = [
 
@@ -43,6 +44,7 @@ const Index = () => {
   const [yearsBack, setYearsBack] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  const [selectedPapers, setSelectedPapers] = useState<ResearchPaper[] | null>([]);
   const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null);
   const [analysisSheetUrl, setAnalysisSheetUrl] = useState('');
   const [processingStage, setProcessingStage] = useState('');
@@ -258,14 +260,16 @@ const Index = () => {
       const sheetUrl = outputs.google_sheet_url || outputs.sheet_url || outputs.results_url || outputs.output_url;
       
       // Extract paper count (try different possible output keys)
-      const paperCount = outputs.paper_count || outputs.count || outputs.total_papers || outputs.results_count;
+      const paper_count = outputs.paper_count || outputs.count || outputs.total_papers || outputs.results_count;
 
       const table_content = outputs.table_content;
 
-      if (table_content && paperCount) {
-        setResearchPapers(table_content);
+      if (table_content && paper_count) {
+        // setResearchPapers(table_content);
+        console.log(`Table content: ${table_content}`);
+        console.log(`Paper count: ${paper_count}`);
         setGumloopData(table_content);
-        setPaperCount(parseInt(paperCount));
+        setPaperCount(parseInt(paper_count));
         setCurrentStep('selection');
         setIsLoading(false);
         setProcessingStage('');
@@ -338,14 +342,25 @@ const Index = () => {
       //   doi: '10.1000/xyz123',
       //   citations: Math.floor(Math.random() * 500) + 50
       // };
-      const mockPaper = selectedPaper[0];
+      // const mockPaper = selectedPaper[0];
       
-      setSelectedPaper(mockPaper);
+      // setSelectedPaper(mockPaper);
+      // setCurrentStep('paper-view');
+      // toast({
+      //   title: "Paper Selected Successfully",
+      //   description: `"${mockPaper.title.substring(0, 50)}..." is now loaded for analysis`,
+      // });
+      setSelectedPapers(selectedPapers);
+      setSelectedPaper(selectedPapers[0]);
       setCurrentStep('paper-view');
+
+      const paperCount = selectedPapers.length;
+      const paperText = paperCount === 1 ? 'paper' : 'papers';
+
       toast({
-        title: "Paper Selected Successfully",
-        description: `"${mockPaper.title.substring(0, 50)}..." is now loaded for analysis`,
-      });
+        title: "Papers Selected Succesfully",
+        description: `${paperCount} ${paperText} seelcted for analysis`,
+      })
     } catch (error) {
       console.error('Error selecting paper:', error);
       toast({
@@ -357,12 +372,12 @@ const Index = () => {
   };
 
   const handleRunAnalysis = async () => {
-    if (!selectedPaper) return;
+    if (!selectedPapers || selectedPapers.length == 0) return;
     
     setIsLoading(true);
-    setCurrentStep('analysis-processing'); // Add processing step for analysis
+    setCurrentStep('analysis-processing');
     setProcessingStage('Initializing analysis workflow...');
-    setProgressPercentage(0); // Reset progress
+    setProgressPercentage(0);
     
     toast({
       title: "Starting Analysis",
@@ -370,6 +385,10 @@ const Index = () => {
     });
 
     try {
+      // Extract titles and links from selectedPapers
+      const titles = selectedPapers.map(paper => paper.title);
+      const links = selectedPapers.map(paper => paper.paperLink || ''); // Use DOI as link, or empty string if not available
+      
       // Call Gumloop workflow for analysis
       const analysisResponse = await fetch(import.meta.env.VITE_GUMLOOP_MAIN_FLOW_WEBHOOK_URL, {
         method: 'POST',
@@ -377,6 +396,10 @@ const Index = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_GUMLOOP_API_TOKEN}`, 
         },
+        body: JSON.stringify({
+          titles: titles,
+          links: links
+        })
       });
 
       if (!analysisResponse.ok) {
@@ -403,7 +426,7 @@ const Index = () => {
         variant: "destructive",
       });
       setIsLoading(false);
-      setCurrentStep('paper-view'); // Return to paper view on error
+      setCurrentStep('paper-view');
     }
   };
 
@@ -597,6 +620,7 @@ const Index = () => {
     setTopicKeyword('');
     setYearsBack('');
     setGoogleSheetUrl('');
+    setSelectedPapers(null);
     setSelectedPaper(null);
     setAnalysisSheetUrl('');
     setPaperCount(0);
@@ -824,7 +848,7 @@ const Index = () => {
                     <div><strong>Year:</strong> {selectedPaper.year}</div>
                     <div><strong>Journal:</strong> {selectedPaper.journal}</div>
                     {selectedPaper.citations && <div><strong>Citations:</strong> {selectedPaper.citations}</div>}
-                    {selectedPaper.doi && <div><strong>DOI:</strong> {selectedPaper.doi}</div>}
+                    {selectedPaper.paperLink && <div><strong>DOI:</strong> {selectedPaper.paperLink}</div>}
                   </div>
                 </div>
                 

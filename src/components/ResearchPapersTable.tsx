@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, CheckCircle } from 'lucide-react';
 
-interface ResearchPaper {
+export interface ResearchPaper {
   id: string;
   title: string;
   authors: string[];
@@ -35,10 +35,12 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
   const [selectedPaperIds, setSelectedPaperIds] = useState<Set<string>>(new Set());
 
   // Convert Gumloop data format to ResearchPaper format
+  console.log('Gumloop data:', gumloopData);
   const processedPapers = React.useMemo(() => {
-    if (gumloopData && gumloopData.length > 1) {
+    console.log('Gumloop Data length:', gumloopData?.length);
+    if (gumloopData && gumloopData.length > 0) {
       // Skip the header row (index 0) and process data rows
-      return gumloopData.slice(1).map((row, index) => ({
+      return gumloopData.map((row, index) => ({
         id: `gumloop_paper_${index}`,
         title: row[1] || 'Untitled Paper',
         authors: [row[2] || 'Unknown Author'], // Gumloop has single author field
