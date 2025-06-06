@@ -11,6 +11,7 @@ import { Search, FileText, ExternalLink, BarChart3, BookOpen, AlertCircle, Check
 import ResearchPapersTable from '@/components/ResearchPapersTable';
 import { ResearchPaper } from '@/components/ResearchPapersTable';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { mock } from 'node:test';
 
 
 const mockData: any[][] = [
@@ -28,6 +29,17 @@ const mockData: any[][] = [
 ]
 
 const mockSheetUrl = 'https://docs.google.com/spreadsheets/d/12_Gmq1oRQOCBQUWpJAksDQ1mgUW-Fceea8OMOTHfTX8/edit?usp=sharing';
+
+const mockSelectedPapers: ResearchPaper[] = [
+  {
+    id: '1',
+    title: 'Green Cement Valuation: An Optimistic Approach to Carbon Dioxide Reduction.',
+    authors: [],
+    abstract: 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly',
+    year: 2023,
+    journal: 'Journal of Applied Engineering Science',
+  },
+]
 
 
 type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'extraction-processing' | 'extraction';
@@ -834,24 +846,6 @@ const Index = () => {
                   </p>
                 </div>
               )}
-
-              <div className="space-y-2 text-sm text-slate-500">
-                {selectedPaper ? (
-                  <>
-                    <p>📊 Extracting research data and methodology</p>
-                    <p>📈 Analyzing citation networks and trends</p>
-                    <p>📋 Generating comprehensive visualizations</p>
-                    <p>⚡ Powered by Gumloop automation</p>
-                  </>
-                ) : (
-                  <>
-                    <p>🔍 Scanning academic databases (Google Scholar, IEEE, PubMed, etc.)</p>
-                    <p>📊 Applying filters and relevance scoring</p>
-                    <p>📝 Compiling results</p>
-                    <p>⚡ Powered by Gumloop automation</p>
-                  </>
-                )}
-              </div>
             </CardContent>
           </Card>
         )}
@@ -930,54 +924,33 @@ const Index = () => {
 
         {/* Step 5: Analysis Processing */}
         {currentStep === 'extraction-processing' && selectedPaper && (
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-8 text-center">
-              <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
-              <h3 className="text-2xl font-semibold text-slate-800 mb-2">Extracting Data From Your Research Paper</h3>
-              <p className="text-slate-600 mb-6">
-                Extracting data from "<strong>{selectedPaper.title.substring(0, 60)}...</strong>"
-              </p>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div
-                  className="bg-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progressPercentage.toFixed(1)}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
-
-              {processingStage && (
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
-                  <div className="flex items-center justify-center gap-2 text-purple-800">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium">{processingStage}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Paper Info Card */}
-              <div className="bg-slate-50 p-4 rounded-lg border mb-4 text-left">
-                <h4 className="font-semibold text-slate-800 mb-2">Extracting from Paper:</h4>
-                <div className="text-sm text-slate-600 space-y-1">
-                  <p><strong>Authors:</strong> {selectedPaper.authors.slice(0, 3).join(', ')}{selectedPaper.authors.length > 3 ? ' et al.' : ''}</p>
-                  <p><strong>Journal:</strong> {selectedPaper.journal} ({selectedPaper.year})</p>
-                  {selectedPaper.citations && <p><strong>Citations:</strong> {selectedPaper.citations}</p>}
+        <Card className="shadow-lg border-0">
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
+            <h3 className="text-2xl font-semibold text-slate-800 mb-2">Extracting Data From Your Research Papers</h3>
+            <p className="text-slate-600 mb-6">
+            </p>
+      
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+              <div 
+                className="bg-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+                style={{ width: `${progressPercentage.toFixed(1)}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
+      
+            {processingStage && (
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
+                <div className="flex items-center justify-center gap-2 text-purple-800">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm font-medium">{processingStage}</span>
                 </div>
               </div>
-
-              <div className="space-y-2 text-sm text-slate-500">
-                <p>📊 Extracting data from charts</p>
-                <p>📈 Extracting data from graphs</p>
-                <p>📋 Extracting data from text</p>
-                <p>⚡ Powered by Gumloop automation</p>
-              </div>
-
-              <div className="mt-6 text-xs text-slate-400">
-                <p>This process typically takes 10-20 minutes depending on paper complexity</p>
-              </div>
-            </CardContent>
-          </Card>
+            )}
+      
+          </CardContent>
+        </Card>
         )}
 
         {/* Step 6: Analysis Results */}
@@ -1004,29 +977,6 @@ const Index = () => {
                     View Extracted Data
                   </Button>
                 </div>
-
-                <div className="grid md:grid-cols-2 gap-4 text-left">
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-slate-800 mb-2">Extracted Data Includes:</h4>
-                    <ul className="text-sm text-slate-600 space-y-1">
-                      <li>• Data from text in paragraphs</li>
-                      <li>• Data from tables</li>
-                      <li>• Data from graphs and charts</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-slate-800 mb-2">Next Steps:</h4>
-                    <ul className="text-sm text-slate-600 space-y-1">
-                      <li>• Download charts and graphs</li>
-                      <li>• Export raw data for further analysis</li>
-                      <li>• Share results with research team</li>
-                      <li>• Generate reports and presentations</li>
-                      <li>• Start analysis on related papers</li>
-                    </ul>
-                  </div>
-                </div>
-
                 <div className="flex gap-4 justify-center">
                   <Button
                     onClick={resetWorkflow}
@@ -1034,14 +984,6 @@ const Index = () => {
                     className="border-blue-600 text-blue-600 hover:bg-blue-50"
                   >
                     Start New Research Query
-                  </Button>
-                  <Button
-                    onClick={() => window.open(extractionSheetUrl, '_blank')}
-                    variant="outline"
-                    className="border-green-600 text-green-600 hover:bg-green-50"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open Analysis Sheet
                   </Button>
                 </div>
               </div>
