@@ -11,11 +11,12 @@ import { Search, FileText, ExternalLink, BarChart3, BookOpen, AlertCircle, Check
 import ResearchPapersTable from '@/components/ResearchPapersTable';
 import { ResearchPaper } from '@/components/ResearchPapersTable';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { mock } from 'node:test';
 
 
 const mockData: any[][] = [
 
-  ['1', 'Green Cement Valuation: An Optimistic Approach to Carbon Dioxide Reduction.', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://sciendo.com/pdf/10.2478/jaes-2023-0033', 'False'],
+['1', 'Sustainable concrete production: utilizing cow dung ash and corn stalk ash as eco-friendly alternatives', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://pdfs.semanticscholar.org/ffc9/6305229dc0b43f78c6374a9b989bfca2d247.pdf', 'False'],
 
 
   ['2', 'Recent Developments in Reinforced Concrete Structures: A Comprehensive', '-', 'discusses eco-friendly building practises, eco-friendly design  Green building certifications:  Obtaining certifications for  are investigating how to make concrete that is carbon-neutral. 2.', 'https://ijaem.net/issue_dcp/Recent%20Developments%20in%20Reinforced%20Concrete%20Structures%20A%20Comprehensive%20Review.pdf', 'False'],
@@ -27,8 +28,22 @@ const mockData: any[][] = [
   ['4', 'Sustainable, Carbon-Neutral Construction Using Biobased Materials', '-', 'growing interest in sustainable, carbon-neutral building materials.  as hempcrete,  biochar-enhanced concrete, timber, clay, cork,  , concrete can store CO₂, making it a more', 'https://unisciencepub.com/wp-content/uploads/2025/04/Sustainable-Carbon-Neutral-Construction-Using-Biobased-Materials.pdf', 'False']
 ]
 
+const mockSheetUrl = 'https://docs.google.com/spreadsheets/d/12_Gmq1oRQOCBQUWpJAksDQ1mgUW-Fceea8OMOTHfTX8/edit?usp=sharing';
 
-type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'extraction-processing' | 'extraction';
+const mockSelectedPapers: ResearchPaper[] = [
+  {
+    id: '1',
+    title: 'Sustainable concrete production: utilizing cow dung ash and corn stalk ash as eco-friendly alternatives',
+    authors: [],
+    abstract: 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly',
+    paperLink: 'https://pdfs.semanticscholar.org/ffc9/6305229dc0b43f78c6374a9b989bfca2d247.pdf',
+    year: 2023,
+    journal: 'Journal of Applied Engineering Science',
+  },
+]
+
+
+type WorkflowStep = 'input' | 'processing' | 'selection' | 'extraction-processing' | 'extraction';
 
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -38,7 +53,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPapers, setSelectedPapers] = useState<ResearchPaper[] | null>([]);
   const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null);
-  const [extractionSheetUrl, setExtractionSheetUrl] = useState('');
+  const [extractionSheetUrl, setExtractionSheetUrl] = useState(mockSheetUrl);
   const [processingStage, setProcessingStage] = useState('');
   const [paperCount, setPaperCount] = useState(0);
   const [runId, setRunId] = useState<string | null>(null);
@@ -332,16 +347,19 @@ const Index = () => {
   const handlePaperSelection = async (selectedPapers: ResearchPaper[]) => {
     try {
       setSelectedPapers(selectedPapers);
+      console.log('Selected papers:', selectedPapers);
       setSelectedPaper(selectedPapers[0]);
-      setCurrentStep('paper-view');
+      setCurrentStep('extraction-processing');
 
       const paperCount = selectedPapers.length;
       const paperText = paperCount === 1 ? 'paper' : 'papers';
 
       toast({
         title: "Papers Selected Succesfully",
-        description: `${paperCount} ${paperText} seelcted for analysis`,
+        description: `${paperCount} ${paperText} selected for extraction.`,
       })
+
+      handleRunExtraction(selectedPapers);
     } catch (error) {
       console.error('Error selecting paper:', error);
       toast({
@@ -352,9 +370,11 @@ const Index = () => {
     }
   };
 
-  const handleRunExtraction = async () => {
-    if (!selectedPapers || selectedPapers.length == 0) return;
-
+  const handleRunExtraction = async (selected_papers: ResearchPaper[]) => {
+    console.log('Running extraction for selected papers:', selectedPapers);
+    if (!selected_papers || selected_papers.length == 0) return;
+    
+    console.log('Running extraction for selected papers:', selected_papers);
     setIsLoading(true);
     setCurrentStep('extraction-processing');
     setProcessingStage('Initializing extraction workflow...');
@@ -367,9 +387,9 @@ const Index = () => {
 
     try {
       // Extract titles and links from selectedPapers
-      const titles = selectedPapers.map(paper => paper.title);
-      const links = selectedPapers.map(paper => paper.paperLink || '');
-
+      const titles = selected_papers.map(paper => paper.title);
+      const links = selected_papers.map(paper => paper.paperLink || ''); 
+      
       // Call Gumloop workflow for analysis
       const extractionResponse = await fetch(import.meta.env.VITE_GUMLOOP_MAIN_FLOW_WEBHOOK_URL, {
         method: 'POST',
@@ -407,7 +427,7 @@ const Index = () => {
         variant: "destructive",
       });
       setIsLoading(false);
-      setCurrentStep('paper-view');
+      setCurrentStep('selection');
     }
   };
 
@@ -444,7 +464,7 @@ const Index = () => {
         console.error('Error polling extraction progress:', error);
         // Continue polling unless it's a critical error
       }
-    }, 60000); // Poll every 2 seconds
+    }, 30000); // Poll every 2 seconds
 
     setPollingInterval(interval);
   };
@@ -466,7 +486,7 @@ const Index = () => {
         const elapsedSeconds = (currentTime - startTime) / 1000;
 
         // Progress over 45 seconds for analysis (longer than search), capped at 90%
-        const timeProgress = Math.min((elapsedSeconds / 480) * 90, 90);
+        const timeProgress = Math.min((elapsedSeconds / 150) * 90, 90);
         progress = Math.max(10, timeProgress);
 
         console.log(`Extraction elapsed time: ${elapsedSeconds.toFixed(1)}s, Progress: ${progress.toFixed(1)}%`);
@@ -517,7 +537,7 @@ const Index = () => {
       if (outputs.analysis_sheet_url || outputs.results_url) {
         const sheetUrl = outputs.analysis_sheet_url || outputs.results_url;
         if (sheetUrl && !extractionSheetUrl) {
-          setExtractionSheetUrl(sheetUrl);
+          setExtractionSheetUrl(mockSheetUrl);
         }
       }
     }
@@ -531,7 +551,7 @@ const Index = () => {
       const sheetUrl = outputs.analysis_sheet_url || outputs.results_url || outputs.output_url || outputs.sheet_url;
 
       if (sheetUrl) {
-        setExtractionSheetUrl(sheetUrl);
+        setExtractionSheetUrl(mockSheetUrl);
         setCurrentStep('extraction');
         setIsLoading(false);
         setProcessingStage('');
@@ -549,7 +569,7 @@ const Index = () => {
           variant: "destructive",
         });
         setIsLoading(false);
-        setCurrentStep('paper-view');
+        setCurrentStep('selection');
       }
     } else {
       // No outputs available
@@ -559,7 +579,7 @@ const Index = () => {
         variant: "destructive",
       });
       setIsLoading(false);
-      setCurrentStep('paper-view');
+      setCurrentStep('selection');
     }
   };
 
@@ -582,7 +602,7 @@ const Index = () => {
     });
 
     setIsLoading(false);
-    setCurrentStep('paper-view');
+    setCurrentStep('selection');
     setProcessingStage('');
     setRunId(null);
   };
@@ -628,39 +648,27 @@ const Index = () => {
             { step: 'input', label: 'Search', icon: Search },
             { step: 'processing', label: 'Processing', icon: FileText },
             { step: 'selection', label: 'Selection', icon: ExternalLink },
-            { step: 'paper-view', label: 'Review', icon: BookOpen },
+            // { step: 'paper-view', label: 'Review', icon: BookOpen },
             { step: 'extraction-processing', label: 'Extraction', icon: Clock },
             { step: 'extraction', label: 'Extracted Data', icon: BarChart3 }
           ].map(({ step, label, icon: Icon }, index) => (
             <React.Fragment key={step}>
-              <div
-                className={`flex flex-col items-center ${currentStep === step
-                    ? 'text-blue-600'
-                    : ['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index
-                      ? 'text-green-600'
-                      : 'text-slate-400'
-                  }`}
-              >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${currentStep === step
-                      ? 'border-blue-600 bg-blue-100'
-                      : ['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index
-                        ? 'border-green-600 bg-green-100'
-                        : 'border-slate-300'
-                    }`}
-                >
+              <div className={`flex flex-col items-center ${
+                currentStep === step ? 'text-blue-600' : 
+                ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'text-green-600' : 'text-slate-400'
+              }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
+                  currentStep === step ? 'border-blue-600 bg-blue-100' :
+                  ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'border-green-600 bg-green-100' : 'border-slate-300'
+                }`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <span className="text-sm mt-1 font-medium">{label}</span>
               </div>
-
-              {index < 5 && (
-                <div
-                  className={`w-16 h-0.5 ${['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index
-                      ? 'bg-green-600'
-                      : 'bg-slate-300'
-                    }`}
-                />
+              {index < 4 && (
+                <div className={`w-16 h-0.5 ${
+                  ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'bg-green-600' : 'bg-slate-300'
+                }`} />
               )}
             </React.Fragment>
 
@@ -832,24 +840,6 @@ const Index = () => {
                   </p>
                 </div>
               )}
-
-              <div className="space-y-2 text-sm text-slate-500">
-                {selectedPaper ? (
-                  <>
-                    <p>📊 Extracting research data and methodology</p>
-                    <p>📈 Analyzing citation networks and trends</p>
-                    <p>📋 Generating comprehensive visualizations</p>
-                    <p>⚡ Powered by Gumloop automation</p>
-                  </>
-                ) : (
-                  <>
-                    <p>🔍 Scanning academic databases (Google Scholar, IEEE, PubMed, etc.)</p>
-                    <p>📊 Applying filters and relevance scoring</p>
-                    <p>📝 Compiling results</p>
-                    <p>⚡ Powered by Gumloop automation</p>
-                  </>
-                )}
-              </div>
             </CardContent>
           </Card>
         )}
@@ -865,7 +855,7 @@ const Index = () => {
           />
         )}
 
-        {/* Step 4: Paper View */}
+        {/* Step 4: Paper View
         {currentStep === 'paper-view' && selectedPaper && (
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-t-lg">
@@ -925,57 +915,36 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
-
+ */}
         {/* Step 5: Analysis Processing */}
         {currentStep === 'extraction-processing' && selectedPaper && (
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-8 text-center">
-              <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
-              <h3 className="text-2xl font-semibold text-slate-800 mb-2">Extracting Data From Your Research Paper</h3>
-              <p className="text-slate-600 mb-6">
-                Extracting data from "<strong>{selectedPaper.title.substring(0, 60)}...</strong>"
-              </p>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div
-                  className="bg-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progressPercentage.toFixed(1)}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
-
-              {processingStage && (
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
-                  <div className="flex items-center justify-center gap-2 text-purple-800">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium">{processingStage}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Paper Info Card */}
-              <div className="bg-slate-50 p-4 rounded-lg border mb-4 text-left">
-                <h4 className="font-semibold text-slate-800 mb-2">Extracting from Paper:</h4>
-                <div className="text-sm text-slate-600 space-y-1">
-                  <p><strong>Authors:</strong> {selectedPaper.authors.slice(0, 3).join(', ')}{selectedPaper.authors.length > 3 ? ' et al.' : ''}</p>
-                  <p><strong>Journal:</strong> {selectedPaper.journal} ({selectedPaper.year})</p>
-                  {selectedPaper.citations && <p><strong>Citations:</strong> {selectedPaper.citations}</p>}
+        <Card className="shadow-lg border-0">
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
+            <h3 className="text-2xl font-semibold text-slate-800 mb-2">Extracting Data From Your Research Papers</h3>
+            <p className="text-slate-600 mb-6">
+            </p>
+      
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+              <div 
+                className="bg-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+                style={{ width: `${progressPercentage.toFixed(1)}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
+      
+            {processingStage && (
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
+                <div className="flex items-center justify-center gap-2 text-purple-800">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm font-medium">{processingStage}</span>
                 </div>
               </div>
-
-              <div className="space-y-2 text-sm text-slate-500">
-                <p>📊 Extracting data from charts</p>
-                <p>📈 Extracting data from graphs</p>
-                <p>📋 Extracting data from text</p>
-                <p>⚡ Powered by Gumloop automation</p>
-              </div>
-
-              <div className="mt-6 text-xs text-slate-400">
-                <p>This process typically takes 10-20 minutes depending on paper complexity</p>
-              </div>
-            </CardContent>
-          </Card>
+            )}
+      
+          </CardContent>
+        </Card>
         )}
 
         {/* Step 6: Analysis Results */}
@@ -1002,29 +971,6 @@ const Index = () => {
                     View Extracted Data
                   </Button>
                 </div>
-
-                <div className="grid md:grid-cols-2 gap-4 text-left">
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-slate-800 mb-2">Extracted Data Includes:</h4>
-                    <ul className="text-sm text-slate-600 space-y-1">
-                      <li>• Data from text in paragraphs</li>
-                      <li>• Data from tables</li>
-                      <li>• Data from graphs and charts</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-slate-800 mb-2">Next Steps:</h4>
-                    <ul className="text-sm text-slate-600 space-y-1">
-                      <li>• Download charts and graphs</li>
-                      <li>• Export raw data for further analysis</li>
-                      <li>• Share results with research team</li>
-                      <li>• Generate reports and presentations</li>
-                      <li>• Start analysis on related papers</li>
-                    </ul>
-                  </div>
-                </div>
-
                 <div className="flex gap-4 justify-center">
                   <Button
                     onClick={resetWorkflow}
@@ -1032,14 +978,6 @@ const Index = () => {
                     className="border-blue-600 text-blue-600 hover:bg-blue-50"
                   >
                     Start New Research Query
-                  </Button>
-                  <Button
-                    onClick={() => window.open(extractionSheetUrl, '_blank')}
-                    variant="outline"
-                    className="border-green-600 text-green-600 hover:bg-green-50"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open Analysis Sheet
                   </Button>
                 </div>
               </div>
