@@ -191,7 +191,7 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
             disabled={selectedPaperIds.size === 0}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
-            Continue with Selected Papers
+            Extract Data from Selected Papers
           </Button>
         </div>
       </CardContent>

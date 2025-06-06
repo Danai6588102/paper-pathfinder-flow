@@ -16,7 +16,7 @@ import { mock } from 'node:test';
 
 const mockData: any[][] = [
 
-  ['1', 'Green Cement Valuation: An Optimistic Approach to Carbon Dioxide Reduction.', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://sciendo.com/pdf/10.2478/jaes-2023-0033', 'False'],
+['1', 'Sustainable concrete production: utilizing cow dung ash and corn stalk ash as eco-friendly alternatives', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://pdfs.semanticscholar.org/ffc9/6305229dc0b43f78c6374a9b989bfca2d247.pdf', 'False'],
 
 
   ['2', 'Recent Developments in Reinforced Concrete Structures: A Comprehensive', '-', 'discusses eco-friendly building practises, eco-friendly design  Green building certifications:  Obtaining certifications for  are investigating how to make concrete that is carbon-neutral. 2.', 'https://ijaem.net/issue_dcp/Recent%20Developments%20in%20Reinforced%20Concrete%20Structures%20A%20Comprehensive%20Review.pdf', 'False'],
@@ -33,16 +33,17 @@ const mockSheetUrl = 'https://docs.google.com/spreadsheets/d/12_Gmq1oRQOCBQUWpJA
 const mockSelectedPapers: ResearchPaper[] = [
   {
     id: '1',
-    title: 'Green Cement Valuation: An Optimistic Approach to Carbon Dioxide Reduction.',
+    title: 'Sustainable concrete production: utilizing cow dung ash and corn stalk ash as eco-friendly alternatives',
     authors: [],
     abstract: 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly',
+    paperLink: 'https://pdfs.semanticscholar.org/ffc9/6305229dc0b43f78c6374a9b989bfca2d247.pdf',
     year: 2023,
     journal: 'Journal of Applied Engineering Science',
   },
 ]
 
 
-type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'extraction-processing' | 'extraction';
+type WorkflowStep = 'input' | 'processing' | 'selection' | 'extraction-processing' | 'extraction';
 
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -346,16 +347,19 @@ const Index = () => {
   const handlePaperSelection = async (selectedPapers: ResearchPaper[]) => {
     try {
       setSelectedPapers(selectedPapers);
+      console.log('Selected papers:', selectedPapers);
       setSelectedPaper(selectedPapers[0]);
-      setCurrentStep('paper-view');
+      setCurrentStep('extraction-processing');
 
       const paperCount = selectedPapers.length;
       const paperText = paperCount === 1 ? 'paper' : 'papers';
 
       toast({
         title: "Papers Selected Succesfully",
-        description: `${paperCount} ${paperText} seelcted for analysis`,
+        description: `${paperCount} ${paperText} selected for extraction.`,
       })
+
+      handleRunExtraction(selectedPapers);
     } catch (error) {
       console.error('Error selecting paper:', error);
       toast({
@@ -366,9 +370,11 @@ const Index = () => {
     }
   };
 
-  const handleRunExtraction = async () => {
-    if (!selectedPapers || selectedPapers.length == 0) return;
-
+  const handleRunExtraction = async (selected_papers: ResearchPaper[]) => {
+    console.log('Running extraction for selected papers:', selectedPapers);
+    if (!selected_papers || selected_papers.length == 0) return;
+    
+    console.log('Running extraction for selected papers:', selected_papers);
     setIsLoading(true);
     setCurrentStep('extraction-processing');
     setProcessingStage('Initializing extraction workflow...');
@@ -381,9 +387,9 @@ const Index = () => {
 
     try {
       // Extract titles and links from selectedPapers
-      const titles = selectedPapers.map(paper => paper.title);
-      const links = selectedPapers.map(paper => paper.paperLink || '');
-
+      const titles = selected_papers.map(paper => paper.title);
+      const links = selected_papers.map(paper => paper.paperLink || ''); 
+      
       // Call Gumloop workflow for analysis
       const extractionResponse = await fetch(import.meta.env.VITE_GUMLOOP_MAIN_FLOW_WEBHOOK_URL, {
         method: 'POST',
@@ -421,7 +427,7 @@ const Index = () => {
         variant: "destructive",
       });
       setIsLoading(false);
-      setCurrentStep('paper-view');
+      setCurrentStep('selection');
     }
   };
 
@@ -563,7 +569,7 @@ const Index = () => {
           variant: "destructive",
         });
         setIsLoading(false);
-        setCurrentStep('paper-view');
+        setCurrentStep('selection');
       }
     } else {
       // No outputs available
@@ -573,7 +579,7 @@ const Index = () => {
         variant: "destructive",
       });
       setIsLoading(false);
-      setCurrentStep('paper-view');
+      setCurrentStep('selection');
     }
   };
 
@@ -596,7 +602,7 @@ const Index = () => {
     });
 
     setIsLoading(false);
-    setCurrentStep('paper-view');
+    setCurrentStep('selection');
     setProcessingStage('');
     setRunId(null);
   };
@@ -642,39 +648,27 @@ const Index = () => {
             { step: 'input', label: 'Search', icon: Search },
             { step: 'processing', label: 'Processing', icon: FileText },
             { step: 'selection', label: 'Selection', icon: ExternalLink },
-            { step: 'paper-view', label: 'Review', icon: BookOpen },
+            // { step: 'paper-view', label: 'Review', icon: BookOpen },
             { step: 'extraction-processing', label: 'Extraction', icon: Clock },
             { step: 'extraction', label: 'Extracted Data', icon: BarChart3 }
           ].map(({ step, label, icon: Icon }, index) => (
             <React.Fragment key={step}>
-              <div
-                className={`flex flex-col items-center ${currentStep === step
-                    ? 'text-blue-600'
-                    : ['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index
-                      ? 'text-green-600'
-                      : 'text-slate-400'
-                  }`}
-              >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${currentStep === step
-                      ? 'border-blue-600 bg-blue-100'
-                      : ['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index
-                        ? 'border-green-600 bg-green-100'
-                        : 'border-slate-300'
-                    }`}
-                >
+              <div className={`flex flex-col items-center ${
+                currentStep === step ? 'text-blue-600' : 
+                ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'text-green-600' : 'text-slate-400'
+              }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
+                  currentStep === step ? 'border-blue-600 bg-blue-100' :
+                  ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'border-green-600 bg-green-100' : 'border-slate-300'
+                }`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <span className="text-sm mt-1 font-medium">{label}</span>
               </div>
-
-              {index < 5 && (
-                <div
-                  className={`w-16 h-0.5 ${['input', 'processing', 'selection', 'paper-view', 'extraction-processing', 'extraction'].indexOf(currentStep) > index
-                      ? 'bg-green-600'
-                      : 'bg-slate-300'
-                    }`}
-                />
+              {index < 4 && (
+                <div className={`w-16 h-0.5 ${
+                  ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'bg-green-600' : 'bg-slate-300'
+                }`} />
               )}
             </React.Fragment>
 
@@ -861,7 +855,7 @@ const Index = () => {
           />
         )}
 
-        {/* Step 4: Paper View */}
+        {/* Step 4: Paper View
         {currentStep === 'paper-view' && selectedPaper && (
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-t-lg">
@@ -921,7 +915,7 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
-
+ */}
         {/* Step 5: Analysis Processing */}
         {currentStep === 'extraction-processing' && selectedPaper && (
         <Card className="shadow-lg border-0">
