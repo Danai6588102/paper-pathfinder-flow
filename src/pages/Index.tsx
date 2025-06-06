@@ -27,6 +27,8 @@ const mockData: any[][] = [
   ['4', 'Sustainable, Carbon-Neutral Construction Using Biobased Materials', '-', 'growing interest in sustainable, carbon-neutral building materials.  as hempcrete,  biochar-enhanced concrete, timber, clay, cork,  , concrete can store CO₂, making it a more', 'https://unisciencepub.com/wp-content/uploads/2025/04/Sustainable-Carbon-Neutral-Construction-Using-Biobased-Materials.pdf', 'False']
 ]
 
+const mockSheetUrl = 'https://docs.google.com/spreadsheets/d/12_Gmq1oRQOCBQUWpJAksDQ1mgUW-Fceea8OMOTHfTX8/edit?usp=sharing';
+
 
 type WorkflowStep = 'input' | 'processing' | 'selection' | 'paper-view' | 'extraction-processing' | 'extraction';
 
@@ -38,7 +40,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPapers, setSelectedPapers] = useState<ResearchPaper[] | null>([]);
   const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null);
-  const [extractionSheetUrl, setExtractionSheetUrl] = useState('');
+  const [extractionSheetUrl, setExtractionSheetUrl] = useState(mockSheetUrl);
   const [processingStage, setProcessingStage] = useState('');
   const [paperCount, setPaperCount] = useState(0);
   const [runId, setRunId] = useState<string | null>(null);
@@ -444,7 +446,7 @@ const Index = () => {
         console.error('Error polling extraction progress:', error);
         // Continue polling unless it's a critical error
       }
-    }, 60000); // Poll every 2 seconds
+    }, 30000); // Poll every 2 seconds
 
     setPollingInterval(interval);
   };
@@ -466,7 +468,7 @@ const Index = () => {
         const elapsedSeconds = (currentTime - startTime) / 1000;
 
         // Progress over 45 seconds for analysis (longer than search), capped at 90%
-        const timeProgress = Math.min((elapsedSeconds / 480) * 90, 90);
+        const timeProgress = Math.min((elapsedSeconds / 150) * 90, 90);
         progress = Math.max(10, timeProgress);
 
         console.log(`Extraction elapsed time: ${elapsedSeconds.toFixed(1)}s, Progress: ${progress.toFixed(1)}%`);
@@ -517,7 +519,7 @@ const Index = () => {
       if (outputs.analysis_sheet_url || outputs.results_url) {
         const sheetUrl = outputs.analysis_sheet_url || outputs.results_url;
         if (sheetUrl && !extractionSheetUrl) {
-          setExtractionSheetUrl(sheetUrl);
+          setExtractionSheetUrl(mockSheetUrl);
         }
       }
     }
@@ -531,7 +533,7 @@ const Index = () => {
       const sheetUrl = outputs.analysis_sheet_url || outputs.results_url || outputs.output_url || outputs.sheet_url;
 
       if (sheetUrl) {
-        setExtractionSheetUrl(sheetUrl);
+        setExtractionSheetUrl(mockSheetUrl);
         setCurrentStep('extraction');
         setIsLoading(false);
         setProcessingStage('');
