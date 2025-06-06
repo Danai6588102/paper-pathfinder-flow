@@ -16,7 +16,7 @@ import { mock } from 'node:test';
 
 const mockData: any[][] = [
 
-['1', 'Sustainable concrete production: utilizing cow dung ash and corn stalk ash as eco-friendly alternatives', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://pdfs.semanticscholar.org/ffc9/6305229dc0b43f78c6374a9b989bfca2d247.pdf', 'False'],
+  ['1', 'Sustainable concrete production: utilizing cow dung ash and corn stalk ash as eco-friendly alternatives', '-', 'made in a sustainable and ecologically responsible manner  or carbon-neutral  materials are employed in its production. Geopolymer cement is one of the most popular eco-friendly', 'https://pdfs.semanticscholar.org/ffc9/6305229dc0b43f78c6374a9b989bfca2d247.pdf', 'False'],
 
 
   ['2', 'Recent Developments in Reinforced Concrete Structures: A Comprehensive', '-', 'discusses eco-friendly building practises, eco-friendly design  Green building certifications:  Obtaining certifications for  are investigating how to make concrete that is carbon-neutral. 2.', 'https://ijaem.net/issue_dcp/Recent%20Developments%20in%20Reinforced%20Concrete%20Structures%20A%20Comprehensive%20Review.pdf', 'False'],
@@ -373,7 +373,7 @@ const Index = () => {
   const handleRunExtraction = async (selected_papers: ResearchPaper[]) => {
     console.log('Running extraction for selected papers:', selectedPapers);
     if (!selected_papers || selected_papers.length == 0) return;
-    
+
     console.log('Running extraction for selected papers:', selected_papers);
     setIsLoading(true);
     setCurrentStep('extraction-processing');
@@ -388,8 +388,8 @@ const Index = () => {
     try {
       // Extract titles and links from selectedPapers
       const titles = selected_papers.map(paper => paper.title);
-      const links = selected_papers.map(paper => paper.paperLink || ''); 
-      
+      const links = selected_papers.map(paper => paper.paperLink || '');
+
       // Call Gumloop workflow for analysis
       const extractionResponse = await fetch(import.meta.env.VITE_GUMLOOP_MAIN_FLOW_WEBHOOK_URL, {
         method: 'POST',
@@ -632,230 +632,243 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center py-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <img src="/logo.png" alt="Logo" className="h-20" />
-            <h1 className="text-4xl font-bold text-slate-800">Research Paper Data Extraction</h1>
-          </div>
-          <p className="text-slate-600 text-lg">Extract academic research data with automated workflows</p>
-        </div>
+      {/* Top Bar: Logo left, Profile right */}
+      {/* Logo on the left */}
+      <img src="/logo.png" alt="Logo" style={{ height: "160px" }} />
+      <br></br>
 
-        {/* Progress Indicator */}
-        <div className="flex items-center justify-center space-x-4 mb-8">
-          {[
-            { step: 'input', label: 'Search', icon: Search },
-            { step: 'processing', label: 'Processing', icon: FileText },
-            { step: 'selection', label: 'Selection', icon: ExternalLink },
-            // { step: 'paper-view', label: 'Review', icon: BookOpen },
-            { step: 'extraction-processing', label: 'Extraction', icon: Clock },
-            { step: 'extraction', label: 'Extracted Data', icon: BarChart3 }
-          ].map(({ step, label, icon: Icon }, index) => (
-            <React.Fragment key={step}>
-              <div className={`flex flex-col items-center ${
-                currentStep === step ? 'text-blue-600' : 
-                ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'text-green-600' : 'text-slate-400'
-              }`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                  currentStep === step ? 'border-blue-600 bg-blue-100' :
-                  ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'border-green-600 bg-green-100' : 'border-slate-300'
-                }`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className="text-sm mt-1 font-medium">{label}</span>
+      {/* Main Layout: Sidebar and Main Content */}
+      <div className="flex flex-1 min-h-[calc(100vh-80px)]">
+        {/* Sidebar */}
+        <aside className="w-64 bg-white shadow-lg p-6">
+          <nav className="space-y-4 text-slate-700 font-medium mt-4">
+            <a href="#collection" className="block hover:text-blue-600">📚 Research Collection</a>
+            <a href="#history" className="block hover:text-blue-600">📂 Extract History</a>
+          </nav>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 px-6 overflow-y-auto">
+          <div className="mx-auto space-y-3">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-slate-800">Welcome to LABWISE</h1>
+              <div className="flex items-center space-x-3">
+                <img src="profile.png" alt="User" className="h-10 w-10 rounded-full border" />
+                <span className="text-slate-700 font-medium">Researcher</span>
               </div>
-              {index < 4 && (
-                <div className={`w-16 h-0.5 ${
-                  ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'bg-green-600' : 'bg-slate-300'
-                }`} />
-              )}
-            </React.Fragment>
+            </div>
 
-          ))}
-        </div>
-
-        {/* Step 1: Input Form */}
-        {currentStep === 'input' && (
-          <>
-            {/* Card 1: Research Paper Keyword Search */}
-            <Card className="shadow-lg border-0 mb-6">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
-                <CardTitle className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <Search className="w-6 h-6" />
-                    Research Paper Search
+            {/* Progress Indicator */}
+            <div className="flex items-center justify-center space-x-4 mb-8">
+              {[
+                { step: 'input', label: 'Search', icon: Search },
+                { step: 'processing', label: 'Processing', icon: FileText },
+                { step: 'selection', label: 'Selection', icon: ExternalLink },
+                // { step: 'paper-view', label: 'Review', icon: BookOpen },
+                { step: 'extraction-processing', label: 'Extraction', icon: Clock },
+                { step: 'extraction', label: 'Extracted Data', icon: BarChart3 }
+              ].map(({ step, label, icon: Icon }, index) => (
+                <React.Fragment key={step}>
+                  <div className={`flex flex-col items-center ${currentStep === step ? 'text-blue-600' :
+                    ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'text-green-600' : 'text-slate-400'
+                    }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${currentStep === step ? 'border-blue-600 bg-blue-100' :
+                      ['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'border-green-600 bg-green-100' : 'border-slate-300'
+                      }`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm mt-1 font-medium">{label}</span>
                   </div>
+                  {index < 4 && (
+                    <div className={`w-16 h-0.5 ${['input', 'processing', 'selection', 'extraction-processing', 'extraction'].indexOf(currentStep) > index ? 'bg-green-600' : 'bg-slate-300'
+                      }`} />
+                  )}
+                </React.Fragment>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button className="text-white hover:text-blue-200">
-                          <Info className="w-5 h-5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="w-80 text-sm bg-white text-slate-700 border border-blue-200 shadow-lg rounded-lg p-4">
-                        <div className="flex items-start gap-2">
-                          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                          <div>
-                            <p className="font-semibold text-blue-800 mb-1">How it works:</p>
-                            <ol className="list-decimal list-inside space-y-1">
-                              <li>Enter your research topic and time range</li>
-                              <li>Our automated workflow searches academic databases</li>
-                              <li>Results are compiled in a web page for review</li>
-                              <li>Select your preferred paper for detailed analysis</li>
-                              <li>Generate comprehensive data analysis and visualizations</li>
-                            </ol>
-                          </div>
+              ))}
+            </div>
+
+            {/* Step 1: Input Form */}
+            {currentStep === 'input' && (
+              <>
+                {/* Card 1: Research Paper Keyword Search */}
+                <Card className="shadow-lg border-0 mb-6">
+                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+                    <CardTitle className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <Search className="w-6 h-6" />
+                        Research Paper Search
+                      </div>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button className="text-white hover:text-blue-200">
+                              <Info className="w-5 h-5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="w-80 text-sm bg-white text-slate-700 border border-blue-200 shadow-lg rounded-lg p-4">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                              <div>
+                                <p className="font-semibold text-blue-800 mb-1">How it works:</p>
+                                <ol className="list-decimal list-inside space-y-1">
+                                  <li>Enter your research topic and time range</li>
+                                  <li>Our automated workflow searches academic databases</li>
+                                  <li>Results are compiled in a web page for review</li>
+                                  <li>Select your preferred paper for detailed analysis</li>
+                                  <li>Generate comprehensive data analysis and visualizations</li>
+                                </ol>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <form onSubmit={handleSubmitSearch} className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="topic" className="text-slate-700 font-medium">Research Topic Keyword</Label>
+                          <Input
+                            id="topic"
+                            type="text"
+                            placeholder="e.g., machine learning, climate change, quantum computing"
+                            value={topicKeyword}
+                            onChange={(e) => setTopicKeyword(e.target.value)}
+                            className="border-slate-300 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-slate-500">Use specific keywords for better results</p>
                         </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleSubmitSearch} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="topic" className="text-slate-700 font-medium">Research Topic Keyword</Label>
-                      <Input
-                        id="topic"
-                        type="text"
-                        placeholder="e.g., machine learning, climate change, quantum computing"
-                        value={topicKeyword}
-                        onChange={(e) => setTopicKeyword(e.target.value)}
-                        className="border-slate-300 focus:border-blue-500"
-                      />
-                      <p className="text-xs text-slate-500">Use specific keywords for better results</p>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="years" className="text-slate-700 font-medium">Search Time Range</Label>
-                      <Select value={yearsBack} onValueChange={setYearsBack}>
-                        <SelectTrigger className="border-slate-300 focus:border-blue-500">
-                          <SelectValue placeholder="Select time range" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">Last 1 year</SelectItem>
-                          <SelectItem value="2">Last 2 years</SelectItem>
-                          <SelectItem value="3">Last 3 years</SelectItem>
-                          <SelectItem value="5">Last 5 years</SelectItem>
-                          <SelectItem value="10">Last 10 years</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-slate-500">Recent papers may have more relevant data</p>
-                    </div>
-                  </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="years" className="text-slate-700 font-medium">Search Time Range</Label>
+                          <Select value={yearsBack} onValueChange={setYearsBack}>
+                            <SelectTrigger className="border-slate-300 focus:border-blue-500">
+                              <SelectValue placeholder="Select time range" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">Last 1 year</SelectItem>
+                              <SelectItem value="2">Last 2 years</SelectItem>
+                              <SelectItem value="3">Last 3 years</SelectItem>
+                              <SelectItem value="5">Last 5 years</SelectItem>
+                              <SelectItem value="10">Last 10 years</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-slate-500">Recent papers may have more relevant data</p>
+                        </div>
+                      </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Initializing Search...' : 'Search Research Papers'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                      <Button
+                        type="submit"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Initializing Search...' : 'Search Research Papers'}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
 
-            {/* Card 2: File Upload Input */}
-            <Card className="shadow-lg border-0">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
-                <CardTitle>
-                  Upload Research Data File
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleSubmitFile} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="fileUpload" className="text-slate-700 font-medium">Upload File</Label>
-                    <input
-                      type="file"
-                      accept=".pdf,
+                {/* Card 2: File Upload Input */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+                    <CardTitle>
+                      Upload Research Data File
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <form onSubmit={handleSubmitFile} className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="fileUpload" className="text-slate-700 font-medium">Upload File  </Label>
+                        <input
+                          type="file"
+                          accept=".pdf,
                       .doc,
                       .docx,
                       .xls,
                       .xlsx"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setUploadedFile(e.target.files[0]);
-                        }
-                      }}
-                      className="border-slate-300 focus:border-green-500"
-                    />
-                    <p className="text-xs text-slate-500">Upload a file with research data</p>
-                  </div>
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              setUploadedFile(e.target.files[0]);
+                            }
+                          }}
+                          className="border-slate-300 focus:border-green-500"
+                        />
+                        <p className="text-xs text-slate-500">Upload a file with research data</p>
+                      </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
-                    disabled={isLoading || !uploadedFile}
-                  >
-                    {isLoading ? 'Processing File...' : 'Submit File'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </>
-        )}
+                      <Button
+                        type="submit"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+                        disabled={isLoading || !uploadedFile}
+                      >
+                        {isLoading ? 'Processing File...' : 'Submit File'}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
 
-        {/* Step 2: Processing */}
-        {currentStep === 'processing' && (
-          <Card className="shadow-lg border-0">
-            <CardContent className="p-8 text-center">
-              <div className="animate-spin w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-6"></div>
-              <h3 className="text-2xl font-semibold text-slate-800 mb-2">
-                {selectedPaper ? 'Analyzing Your Research Paper' : 'Processing Your Request'}
-              </h3>
-              <p className="text-slate-600 mb-6">
-                {selectedPaper
-                  ? `Extracting data and generating analysis for "${selectedPaper.title.substring(0, 50)}..."`
-                  : `Searching for research papers on "${topicKeyword}" from the last ${yearsBack} years...`
-                }
-              </p>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progressPercentage.toFixed(1)}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
-
-              {processingStage && (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
-                  <div className="flex items-center justify-center gap-2 text-blue-800">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium">{processingStage}</span>
-                  </div>
-                </div>
-              )}
-
-              {paperCount > 0 && !selectedPaper && (
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
-                  <p className="text-sm text-green-800 font-medium">
-                    Found {paperCount} papers so far...
+            {/* Step 2: Processing */}
+            {currentStep === 'processing' && (
+              <Card className="shadow-lg border-0">
+                <CardContent className="p-8 text-center">
+                  <div className="animate-spin w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-6"></div>
+                  <h3 className="text-2xl font-semibold text-slate-800 mb-2">
+                    {selectedPaper ? 'Analyzing Your Research Paper' : 'Processing Your Request'}
+                  </h3>
+                  <p className="text-slate-600 mb-6">
+                    {selectedPaper
+                      ? `Extracting data and generating analysis for "${selectedPaper.title.substring(0, 50)}..."`
+                      : `Searching for research papers on "${topicKeyword}" from the last ${yearsBack} years...`
+                    }
                   </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Step 3: Selection Table */}
-        {currentStep === 'selection' && (
-          <ResearchPapersTable
-            papers={researchPapers}
-            onPapersSelected={handlePaperSelection}
-            paperCount={paperCount}
-            topicKeyword={topicKeyword}
-            gumloopData={gumloopData}
-          />
-        )}
+                  {/* Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${progressPercentage.toFixed(1)}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
 
-        {/* Step 4: Paper View
+                  {processingStage && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                      <div className="flex items-center justify-center gap-2 text-blue-800">
+                        <Clock className="w-4 h-4" />
+                        <span className="text-sm font-medium">{processingStage}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {paperCount > 0 && !selectedPaper && (
+                    <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
+                      <p className="text-sm text-green-800 font-medium">
+                        Found {paperCount} papers so far...
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Step 3: Selection Table */}
+            {currentStep === 'selection' && (
+              <ResearchPapersTable
+                papers={researchPapers}
+                onPapersSelected={handlePaperSelection}
+                paperCount={paperCount}
+                topicKeyword={topicKeyword}
+                gumloopData={gumloopData}
+              />
+            )}
+
+            {/* Step 4: Paper View
         {currentStep === 'paper-view' && selectedPaper && (
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-t-lg">
@@ -916,74 +929,76 @@ const Index = () => {
           </Card>
         )}
  */}
-        {/* Step 5: Analysis Processing */}
-        {currentStep === 'extraction-processing' && selectedPaper && (
-        <Card className="shadow-lg border-0">
-          <CardContent className="p-8 text-center">
-            <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
-            <h3 className="text-2xl font-semibold text-slate-800 mb-2">Extracting Data From Your Research Papers</h3>
-            <p className="text-slate-600 mb-6">
-            </p>
-      
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-              <div 
-                className="bg-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
-                style={{ width: `${progressPercentage.toFixed(1)}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
-      
-            {processingStage && (
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
-                <div className="flex items-center justify-center gap-2 text-purple-800">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm font-medium">{processingStage}</span>
-                </div>
-              </div>
+            {/* Step 5: Analysis Processing */}
+            {currentStep === 'extraction-processing' && selectedPaper && (
+              <Card className="shadow-lg border-0">
+                <CardContent className="p-8 text-center">
+                  <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
+                  <h3 className="text-2xl font-semibold text-slate-800 mb-2">Extracting Data From Your Research Papers</h3>
+                  <p className="text-slate-600 mb-6">
+                  </p>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                    <div
+                      className="bg-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${progressPercentage.toFixed(1)}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-4">{progressPercentage.toFixed(1)}% Complete</p>
+
+                  {processingStage && (
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
+                      <div className="flex items-center justify-center gap-2 text-purple-800">
+                        <Clock className="w-4 h-4" />
+                        <span className="text-sm font-medium">{processingStage}</span>
+                      </div>
+                    </div>
+                  )}
+
+                </CardContent>
+              </Card>
             )}
-      
-          </CardContent>
-        </Card>
-        )}
 
-        {/* Step 6: Analysis Results */}
-        {currentStep === 'extraction' && (
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-t-lg">
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-6 h-6" />
-                Extraction Complete
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center space-y-6">
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                  <h3 className="text-xl font-semibold text-green-800 mb-2">Extraction Successfully Generated!</h3>
-                  <p className="text-green-700 mb-4">Your extracted research data is ready for review.</p>
+            {/* Step 6: Analysis Results */}
+            {currentStep === 'extraction' && (
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-t-lg">
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-6 h-6" />
+                    Extraction Complete
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="text-center space-y-6">
+                    <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                      <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                      <h3 className="text-xl font-semibold text-green-800 mb-2">Extraction Successfully Generated!</h3>
+                      <p className="text-green-700 mb-4">Your extracted research data is ready for review.</p>
 
-                  <Button
-                    onClick={() => window.open(extractionSheetUrl, '_blank')}
-                    className="bg-green-600 hover:bg-green-700 text-white mb-4"
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    View Extracted Data
-                  </Button>
-                </div>
-                <div className="flex gap-4 justify-center">
-                  <Button
-                    onClick={resetWorkflow}
-                    variant="outline"
-                    className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                  >
-                    Start New Research Query
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                      <Button
+                        onClick={() => window.open(extractionSheetUrl, '_blank')}
+                        className="bg-green-600 hover:bg-green-700 text-white mb-4"
+                      >
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        View Extracted Data
+                      </Button>
+                    </div>
+                    <div className="flex gap-4 justify-center">
+                      <Button
+                        onClick={resetWorkflow}
+                        variant="outline"
+                        className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                      >
+                        Start New Research Query
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );
