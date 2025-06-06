@@ -631,24 +631,38 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Top Bar: Logo left, Profile right */}
       {/* Logo on the left */}
-      <img src="/logo.png" alt="Logo" style={{ height: "160px" }} />
-      <br></br>
+
 
       {/* Main Layout: Sidebar and Main Content */}
-      <div className="flex flex-1 min-h-[calc(100vh-80px)]">
+      <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-lg p-6">
+        <aside className="w-64 bg-white shadow-lg p-6 h-screen">
+          <img src="/logo.png" alt="Logo" style={{ height: "120px" }} />
+          <br></br>
+
           <nav className="space-y-4 text-slate-700 font-medium mt-4">
-            <a href="#collection" className="block hover:text-blue-600">📚 Research Collection</a>
-            <a href="#history" className="block hover:text-blue-600">📂 Extract History</a>
+            <a
+              href="#collection"
+              className="block bg-white text-black px-4 py-2 rounded-md shadow hover:bg-blue-600 hover:text-white transition-colors"
+            >
+              📚 Research Collection
+            </a>
+            <a
+              href="#history"
+              className="block bg-white text-black px-4 py-2 rounded-md shadow hover:bg-blue-600 hover:text-white transition-colors mt-2"
+            >
+              📂 Extract History
+            </a>
+
           </nav>
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 px-6 overflow-y-auto">
+        <main className="flex-1 px-6 overflow-y-auto max-w-4xl mx-auto">
+          <br></br>
           <div className="mx-auto space-y-3">
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold text-slate-800">Welcome to LABWISE</h1>
