@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,13 +55,13 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
 
   const handleCheckboxChange = (paperId: string, checked: boolean) => {
     const newSelectedIds = new Set(selectedPaperIds);
-    
+
     if (checked) {
       newSelectedIds.add(paperId);
     } else {
       newSelectedIds.delete(paperId);
     }
-    
+
     setSelectedPaperIds(newSelectedIds);
   };
 
@@ -73,6 +72,17 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
       console.log('Selected papers:', selectedPapers);
     }
   };
+
+  const [selectedSource, setSelectedSource] = useState("");
+  const [selectedFileType, setSelectedFileType] = useState("");
+
+  // const filteredPapers = processedPapers.filter((paper) => {
+  //   const matchSource =
+  //     !selectedSource || paper.source === selectedSource;
+  //   const matchType =
+  //     !selectedFileType || paper.fileType === selectedFileType;
+  //   return matchSource && matchType;
+  // });
 
   return (
     <Card className="shadow-lg border-0">
@@ -88,10 +98,38 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
             <p className="text-green-800 font-medium mb-1">
               ✅ Found {processedPapers.length} relevant papers for "{topicKeyword}"
             </p>
-            <p className="text-sm text-green-700">
-              Review the papers below and select one or more for detailed extraction.
-            </p>
           </div>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          {/* Source Filter */}
+          <select
+            className="border border-gray-300 rounded px-4 py-2 bg-white"
+            value={selectedSource}
+            onChange={(e) => setSelectedSource(e.target.value)}
+          >
+            <option value="">All Sources</option>
+            <option value="ResearchGate">ResearchGate</option>
+            <option value="JSTOR">JSTOR</option>
+            <option value="BASE">BASE</option>
+            <option value="CORE">CORE</option>
+            <option value="ScienceDirect">ScienceDirect</option>
+            <option value="PubMed Central">PubMed Central</option>
+            <option value="Science.gov">Science.gov</option>
+          </select>
+
+          {/* File Type Filter */}
+          <select
+            className="border border-gray-300 rounded px-4 py-2 bg-white"
+            value={selectedFileType}
+            onChange={(e) => setSelectedFileType(e.target.value)}
+          >
+            <option value="">All File Types</option>
+            <option value=".pdf">PDF (.pdf)</option>
+            <option value=".doc">Word (.doc)</option>
+            <option value=".docx">Word (.docx)</option>
+            <option value=".xls">Excel (.xls)</option>
+            <option value=".xlsx">Excel (.xlsx)</option>
+          </select>
         </div>
 
         <div className="overflow-x-auto">
@@ -146,8 +184,8 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
                   </td>
                   <td className="border border-slate-300 px-4 py-3">
                     <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
-                      {paper.abstract.length > 150 
-                        ? `${paper.abstract.substring(0, 150)}...` 
+                      {paper.abstract.length > 150
+                        ? `${paper.abstract.substring(0, 150)}...`
                         : paper.abstract
                       }
                     </p>
@@ -181,8 +219,8 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
 
         <div className="mt-6 flex justify-between items-center">
           <p className="text-sm text-slate-600">
-            {selectedPaperIds.size === 0 
-              ? 'Please select one or more papers to continue' 
+            {selectedPaperIds.size === 0
+              ? 'Please select one or more papers to continue'
               : `${selectedPaperIds.size} paper${selectedPaperIds.size === 1 ? '' : 's'} selected`
             }
           </p>
