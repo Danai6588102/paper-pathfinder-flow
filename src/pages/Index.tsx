@@ -12,6 +12,7 @@ import ResearchPapersTable from '@/components/ResearchPapersTable';
 import { ResearchPaper } from '@/components/ResearchPapersTable';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { mock } from 'node:test';
+import { start } from 'repl';
 
 
 const mockData: any[][] = [
@@ -63,6 +64,9 @@ const Index = () => {
   const [gumloopData, setGumloopData] = useState<any[][]>(mockData);
   const { toast } = useToast();
 
+  // Add a new state to track progress timer
+  const [progressTimer, setProgressTimer] = useState<NodeJS.Timeout | null>(null);
+
 
   // อันนี้ handle file input
   const handleSubmitFile = (e: React.FormEvent) => {
@@ -93,8 +97,11 @@ const Index = () => {
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }
+      if (progressTimer) {
+        clearInterval(progressTimer);
+      }
     };
-  }, [pollingInterval]);
+  }, [pollingInterval, progressTimer]);
 
   const handleSubmitSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,6 +158,7 @@ const Index = () => {
 
       // Start polling for progress
       startProgressPolling(workflowRunId);
+      startConstantProgress(30, 2); // Start constant progress updates
 
     } catch (error) {
       console.error('Error starting workflow:', error);
@@ -204,7 +212,7 @@ const Index = () => {
   };
 
   const updateProgressFromGumloop = (progressData: any) => {
-    const { state, log, outputs, created_ts } = progressData;
+    const { state, log, outputs, } = progressData;
 
     // Calculate progress percentage based on time elapsed since workflow creation
     let progress = 0;
@@ -213,21 +221,6 @@ const Index = () => {
       progress = 10;
       setProcessingStage('Workflow starting...');
     } else if (state === 'RUNNING') {
-      // Calculate time-based progress
-      if (created_ts) {
-        const startTime = new Date(created_ts).getTime();
-        const currentTime = Date.now();
-        const elapsedSeconds = (currentTime - startTime) / 1000;
-
-        // Progress over 30 seconds, capped at 90%
-        const timeProgress = Math.min((elapsedSeconds / 30) * 90, 90);
-        progress = Math.max(10, timeProgress); // Ensure minimum 10% progress
-
-        console.log(`Elapsed time: ${elapsedSeconds.toFixed(1)}s, Progress: ${progress.toFixed(1)}%`);
-      } else {
-        progress = 20; // Fallback if no timestamp
-      }
-
       // Base activity message on log entries
       if (log && log.length > 0) {
         const latestLogEntry = log[log.length - 1];
@@ -264,8 +257,6 @@ const Index = () => {
       progress = 100; // Only set to 100% when actually done
       setProcessingStage('Finalizing results...');
     }
-
-    setProgressPercentage(progress);
 
     // If we have partial outputs, update immediately
     if (outputs) {
@@ -418,6 +409,7 @@ const Index = () => {
 
       // Start polling for analysis progress
       startExtractionProgressPolling(extractionRunId);
+      startConstantProgress(170, 2); // Start constant progress updates
 
     } catch (error) {
       console.error('Error starting extraction:', error);
@@ -470,31 +462,14 @@ const Index = () => {
   };
 
   const updateExtractionProgressFromGumloop = (progressData: any) => {
-    const { state, log, outputs, created_ts } = progressData;
+    const { state, log, outputs } = progressData;
 
-    // Calculate progress percentage based on time elapsed since workflow creation
-    let progress = 0;
-
+    // Handle state changes and processing stage messages
     if (state === 'STARTED') {
-      progress = 10;
       setProcessingStage('Extraction workflow starting...');
+      // Start constant progress timer when workflow starts
     } else if (state === 'RUNNING') {
-      // Calculate time-based progress
-      if (created_ts) {
-        const startTime = new Date(created_ts).getTime();
-        const currentTime = Date.now();
-        const elapsedSeconds = (currentTime - startTime) / 1000;
-
-        // Progress over 45 seconds for analysis (longer than search), capped at 90%
-        const timeProgress = Math.min((elapsedSeconds / 150) * 90, 90);
-        progress = Math.max(10, timeProgress);
-
-        console.log(`Extraction elapsed time: ${elapsedSeconds.toFixed(1)}s, Progress: ${progress.toFixed(1)}%`);
-      } else {
-        progress = 20;
-      }
-
-      // Base activity message on log entries for analysis
+      // Base activity message on log entries for extraction
       if (log && log.length > 0) {
         const latestLogEntry = log[log.length - 1];
 
@@ -525,15 +500,17 @@ const Index = () => {
         setProcessingStage('Running data extraction...');
       }
     } else if (state === 'DONE') {
-      progress = 100;
+      // Stop the progress timer and set to 100%
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        setProgressTimer(null);
+      }
+      setProgressPercentage(100);
       setProcessingStage('Extraction complete!');
     }
 
-    setProgressPercentage(progress);
-
-    // If we have partial outputs, could show intermediate results
+    // Handle partial outputs
     if (outputs) {
-      // Handle any intermediate analysis outputs here
       if (outputs.analysis_sheet_url || outputs.results_url) {
         const sheetUrl = outputs.analysis_sheet_url || outputs.results_url;
         if (sheetUrl && !extractionSheetUrl) {
@@ -541,6 +518,30 @@ const Index = () => {
         }
       }
     }
+  };
+
+  // Add this new function to handle constant progress updates
+  const startConstantProgress = (totalTime: number, updateRate: number) => {
+    // Clear any existing timer
+    if (progressTimer) {
+      clearInterval(progressTimer);
+    }
+
+    // Reset progress to 10%
+    setProgressPercentage(10);
+
+    // Update progress every 5 seconds, incrementing by ~4.5% each time
+    // This will reach ~90% in about 18 updates (90 seconds)
+    const updateInterval = updateRate * 100 / totalTime;
+    const timer = setInterval(() => {
+      setProgressPercentage(prev => {
+        const newProgress = prev + updateInterval;
+        // Cap at 99% until workflow is actually done
+        return Math.min(newProgress, 99);
+      });
+    }, updateRate * 1000); // Update every 5 seconds
+
+    setProgressTimer(timer);
   };
 
   const handleExtractionCompletion = (completionData: any) => {
@@ -586,6 +587,12 @@ const Index = () => {
   const handleExtractionError = (errorData: any) => {
     console.error('Extraction workflow failed:', errorData);
 
+    // Clear progress timer on error
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      setProgressTimer(null);
+    }
+
     // Try to extract error message from logs
     let errorMessage = "The extraction workflow encountered an error. Please try again.";
     if (errorData.log && errorData.log.length > 0) {
@@ -608,10 +615,15 @@ const Index = () => {
   };
 
   const resetWorkflow = () => {
-    // Clean up any active polling
+    // Clean up any active polling and progress timer
     if (pollingInterval) {
       clearInterval(pollingInterval);
       setPollingInterval(null);
+    }
+    
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      setProgressTimer(null);
     }
 
     setCurrentStep('input');
@@ -623,6 +635,7 @@ const Index = () => {
     setPaperCount(0);
     setProcessingStage('');
     setRunId(null);
+    setProgressPercentage(0);
 
     toast({
       title: "Workflow Reset",
