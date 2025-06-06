@@ -100,37 +100,46 @@ const ResearchPapersTable: React.FC<ResearchPapersTableProps> = ({
             </p>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
+        {/* Filters Row */}
+        <div className="flex items-center gap-6 mb-6 w-full">
           {/* Source Filter */}
-          <select
-            className="border border-gray-300 rounded px-4 py-2 bg-white"
-            value={selectedSource}
-            onChange={(e) => setSelectedSource(e.target.value)}
-          >
-            <option value="">All Sources</option>
-            <option value="ResearchGate">ResearchGate</option>
-            <option value="JSTOR">JSTOR</option>
-            <option value="BASE">BASE</option>
-            <option value="CORE">CORE</option>
-            <option value="ScienceDirect">ScienceDirect</option>
-            <option value="PubMed Central">PubMed Central</option>
-            <option value="Science.gov">Science.gov</option>
-          </select>
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-sm font-medium whitespace-nowrap">Source (Website)</label>
+            <select
+              className="border border-gray-300 rounded px-4 py-2 bg-white w-full"
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value)}
+            >
+              <option value="">All Sources</option>
+              <option value="ResearchGate">ResearchGate</option>
+              <option value="JSTOR">JSTOR</option>
+              <option value="BASE">BASE</option>
+              <option value="CORE">CORE</option>
+              <option value="ScienceDirect">ScienceDirect</option>
+              <option value="PubMed Central">PubMed Central</option>
+              <option value="Science.gov">Science.gov</option>
+            </select>
+          </div>
 
           {/* File Type Filter */}
-          <select
-            className="border border-gray-300 rounded px-4 py-2 bg-white"
-            value={selectedFileType}
-            onChange={(e) => setSelectedFileType(e.target.value)}
-          >
-            <option value="">All File Types</option>
-            <option value=".pdf">PDF (.pdf)</option>
-            <option value=".doc">Word (.doc)</option>
-            <option value=".docx">Word (.docx)</option>
-            <option value=".xls">Excel (.xls)</option>
-            <option value=".xlsx">Excel (.xlsx)</option>
-          </select>
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-sm font-medium whitespace-nowrap">File Type</label>
+            <select
+              className="border border-gray-300 rounded px-4 py-2 bg-white w-full"
+              value={selectedFileType}
+              onChange={(e) => setSelectedFileType(e.target.value)}
+            >
+              <option value="">All File Types</option>
+              <option value=".pdf">PDF (.pdf)</option>
+              <option value=".doc">Word (.doc)</option>
+              <option value=".docx">Word (.docx)</option>
+              <option value=".xls">Excel (.xls)</option>
+              <option value=".xlsx">Excel (.xlsx)</option>
+            </select>
+          </div>
         </div>
+
+
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-slate-300">
