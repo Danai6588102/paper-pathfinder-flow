@@ -67,9 +67,8 @@ const Index = () => {
   // Add a new state to track progress timer
   const [progressTimer, setProgressTimer] = useState<NodeJS.Timeout | null>(null);
 
-
   // อันนี้ handle file input
-  const handleSubmitFile = (e: React.FormEvent) => {
+  const handleSubmitFile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadedFile) {
       toast({ title: "No file selected", variant: "destructive" });
@@ -87,8 +86,95 @@ const Index = () => {
     if (!validTypes.includes(uploadedFile.type)) {
       toast({ title: "Invalid file type", description: "Please upload a PDF, Word, or Excel file.", variant: "destructive" });
       return;
+    }    setIsLoading(true);
+    setCurrentStep('processing');
+    setProcessingStage('Uploading file and initializing analysis...');
+
+    try {
+      // Convert file to Base64
+      const fileContent = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove the data URL prefix (e.g., "data:application/pdf;base64,") 
+          const base64Content = result.split(',')[1];
+          resolve(base64Content);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(uploadedFile);
+      });
+
+      // Upload file using Gumloop file upload API
+      console.log('Uploading file to Gumloop:', uploadedFile.name);
+      const uploadResponse = await fetch('https://api.gumloop.com/api/v1/upload_file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_GUMLOOP_API_TOKEN}`
+        },
+        body: JSON.stringify({
+          file_name: uploadedFile.name,
+          file_content: fileContent,
+          user_id: import.meta.env.VITE_GUMLOOP_USER_ID,
+          project_id: import.meta.env.VITE_GUMLOOP_PROJECT_ID || 'default'
+        })
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      const uploadData = await uploadResponse.json();
+      console.log('File upload response:', uploadData);
+
+      // Start Gumloop workflow for file processing
+      console.log('Starting workflow with uploaded file...');
+      const webhookResponse = await fetch(import.meta.env.VITE_GUMLOOP_UPLOAD_PDF_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_GUMLOOP_API_TOKEN}`
+        },
+        body: JSON.stringify({
+          file_id: uploadData.file_id || uploadData.id,
+          filename: uploadedFile.name
+        })
+      });
+
+      if (!webhookResponse.ok) {
+        throw new Error('Failed to start file processing workflow');
+      }
+
+      const webhookData = await webhookResponse.json();
+      const workflowRunId = webhookData.run_id;
+
+      if (!workflowRunId) {
+        throw new Error('No run_id received from file processing webhook');
+      }
+
+      setRunId(workflowRunId);
+
+      toast({ 
+        title: "File Upload Successful", 
+        description: "File uploaded successfully. Processing analysis...",
+        variant: "default" 
+      });
+
+      // Start polling for progress
+      startProgressPolling(workflowRunId);
+      startConstantProgress(60, 3); // Start constant progress updates for file processing
+
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "File Upload Error",
+        description: "Failed to upload file to analysis workflow. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      setCurrentStep('input');
+      setProcessingStage('');
     }
-    toast({ title: "File accepted", variant: "default" });
   };
 
   // Clean up polling on unmount
